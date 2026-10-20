@@ -278,6 +278,14 @@
     .item .pics { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
     .item .pics img { width: 84px; height: 84px; object-fit: cover; border-radius: 6px; }
     .stars { color: #e3a008; letter-spacing: 1px; }
+    /* stelle in ordine inverso nel DOM: così "~" accende anche quelle a sinistra */
+    .starpick { display: inline-flex; flex-direction: row-reverse; align-items: center; }
+    .starpick button { background: none; border: 0; padding: 0 1px; font-size: 22px; line-height: 1; color: #d0d7de; cursor: pointer; transition: transform .1s; }
+    .starpick button.on { color: #e3a008; }
+    .starpick:hover button { color: #d0d7de; }
+    .starpick button:hover, .starpick button:hover ~ button { color: #f5b301; }
+    .starpick button:hover { transform: scale(1.15); }
+    .starlbl { font-size: 12px; color: #59636e; min-width: 90px; }
     .sum { padding: 8px 14px; color: #59636e; font-size: 12px; border-bottom: 1px solid #eef1f4; }
     .models th { position: sticky; top: 0; background: #fff; cursor: pointer; padding-top: 10px; }
     .models img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; }
@@ -293,7 +301,8 @@
       .panel, .modal, .models th { background: #1c2128; color: #e6edf3; border-color: #30363d; }
       .stat, .btn.sec, .bar { background: #2d333b; color: #e6edf3; }
       th, td, .item, .toolbar, .sum { border-color: #30363d; }
-      .muted, .stat .l, h4, th, .item .meta, .sum { color: #9198a1; }
+      .muted, .stat .l, h4, th, .item .meta, .sum, .starlbl { color: #9198a1; }
+      .starpick button, .starpick:hover button { color: #444c56; }
       .toolbar input[type=search], .toolbar select { background: #22272e; color: #e6edf3; border-color: #444c56; }
       .models a, .body a { color: #4493f8; }
     }
@@ -509,7 +518,9 @@
       'beforebegin',
       `<div class="toolbar">
         <select data-f="kind"><option value="">${t('All', 'Tutti')}</option><option value="rating">${t('Reviews only', 'Solo recensioni')}</option><option value="comment">${t('Comments only', 'Solo commenti')}</option></select>
-        <span>${[5, 4, 3, 2, 1].map((s) => `<label><input type="checkbox" data-star="${s}" checked>${s}★</label>`).join(' ')}</span>
+        <span class="starpick">${[5, 4, 3, 2, 1]
+          .map((s) => `<button type="button" data-star="${s}" title="${s}★ · ${ratings.filter((r) => r.score === s).length}">★</button>`)
+          .join('')}</span><span class="starlbl"></span>
         <label><input type="checkbox" data-f="text">${t('With text', 'Con testo')}</label>
         <label><input type="checkbox" data-f="pics">${t('With photos', 'Con foto')}</label>
         <label><input type="checkbox" data-f="printed">${t('Printed successfully', 'Stampa riuscita')}</label>
@@ -521,15 +532,25 @@
     );
     const tb = modal.querySelector('.toolbar');
     const list = modal.querySelector('.mbody');
+    let starSel = 0; // 0 = tutte le stelle
+    tb.querySelector('.starpick').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-star]');
+      if (!b) return;
+      starSel = starSel === +b.dataset.star ? 0 : +b.dataset.star;
+      draw();
+    });
 
     const draw = () => {
       const f = (k) => tb.querySelector(`[data-f=${k}]`);
-      const stars = new Set([...tb.querySelectorAll('[data-star]')].filter((c) => c.checked).map((c) => +c.dataset.star));
+      tb.querySelectorAll('[data-star]').forEach((b) => b.classList.toggle('on', +b.dataset.star <= starSel));
+      tb.querySelector('.starlbl').textContent = starSel
+        ? t(`Only ${starSel}★ (${ratings.filter((r) => r.score === starSel).length})`, `Solo ${starSel}★ (${ratings.filter((r) => r.score === starSel).length})`)
+        : t('All ratings', 'Tutti i voti');
       const q = f('q').value.trim().toLowerCase();
       let out = all.filter(
         (i) =>
           (!f('kind').value || i.kind === f('kind').value) &&
-          (i.kind !== 'rating' || !i.score || stars.has(i.score)) &&
+          (!starSel || (i.kind === 'rating' && i.score === starSel)) &&
           (!f('text').checked || i.text.trim()) &&
           (!f('pics').checked || i.images.length) &&
           (!f('printed').checked || i.printed) &&
