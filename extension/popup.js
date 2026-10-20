@@ -1,6 +1,7 @@
 const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, collapsed: false };
 const IT = (navigator.language || '').toLowerCase().startsWith('it');
 const TEXT = {
+  tagline: ['Stats & tools for MakerWorld creators', 'Statistiche e strumenti per i creator di MakerWorld'],
   thanks: ['Thanks for using MakerPulse! A side project made by a MakerWorld creator, for creators.', 'Grazie per usare MakerPulse! Un progetto nato da un creator di MakerWorld, per i creator.'],
   local: [
     'Not affiliated with Bambu Lab. It runs locally in your browser and sends no data anywhere. Found a bug? Let me know on GitHub.',
