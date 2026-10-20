@@ -42,6 +42,8 @@
   .social svg { width: 20px; height: 20px; fill: currentColor; }
   .social a.mw { background: #fff; }
   .social a.mw img { width: 24px; height: 24px; }
+  /* tema scuro: niente fondo bianco, logo in bianco */
+  @media (prefers-color-scheme: dark) { .social a.mw { background: var(--bg); } .social a.mw img { filter: invert(1); mix-blend-mode: screen; } }
   details { margin: 12px; background: var(--bg); border-radius: 16px; box-shadow: var(--shadow-md); padding: 0 16px; }
   summary { cursor: pointer; font-weight: 700; padding: 13px 0; list-style: none; display: flex; justify-content: space-between; }
   summary::after { content: "⌄"; color: var(--muted); }
