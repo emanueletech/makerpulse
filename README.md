@@ -3,6 +3,32 @@
 <h1 align="center">MakerPulse</h1>
 <p align="center">Stats, points, gift cards, review filters and quick replies for <a href="https://makerworld.com">MakerWorld</a> creators.</p>
 
+<p align="center">
+  <a href="https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip"><img src="https://img.shields.io/badge/Download-ZIP-00AE42?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
+  <img src="https://img.shields.io/badge/Chrome_Web_Store-coming_soon-lightgrey?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store: coming soon">
+</p>
+
+<p align="center">
+  <a href="https://github.com/emanueletech/makerpulse/releases/latest"><img src="https://img.shields.io/github/v/release/emanueletech/makerpulse?color=00AE42&label=version" alt="Latest version"></a>
+  <a href="https://github.com/emanueletech/makerpulse/releases"><img src="https://img.shields.io/github/downloads/emanueletech/makerpulse/total?color=00AE42" alt="Downloads"></a>
+  <img src="https://img.shields.io/badge/manifest-v3-blue" alt="Manifest V3">
+  <a href="https://emanueletech.github.io/makerpulse/privacy-policy.html"><img src="https://img.shields.io/badge/privacy-no_data_collected-00AE42" alt="No data collected"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Chrome-supported-4285F4?logo=googlechrome&logoColor=white" alt="Chrome">
+  <img src="https://img.shields.io/badge/Edge-supported-0078D7?logo=microsoftedge&logoColor=white" alt="Edge">
+  <img src="https://img.shields.io/badge/Brave-supported-FB542B?logo=brave&logoColor=white" alt="Brave">
+  <img src="https://img.shields.io/badge/Vivaldi-supported-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi">
+  <img src="https://img.shields.io/badge/language-EN_%7C_IT-555" alt="English and Italian">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/comments.png" width="32%" alt="Review filter">
+  <img src="docs/screenshots/replies.png" width="32%" alt="Quick replies">
+  <img src="docs/screenshots/table.png" width="32%" alt="Models table">
+</p>
+
 ---
 
 ## Features
@@ -20,7 +46,7 @@
 Coming soon.
 
 ### Manual install (Chrome, Edge, Brave, Vivaldi)
-1. Download `makerpulse-x.y.z.zip` from the [latest release](https://github.com/emanueletech/makerpulse/releases/latest) and unzip it.
+1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
 2. Open `chrome://extensions` (or `edge://extensions`) and enable **Developer mode**.
 3. Click **Load unpacked** and select the unzipped folder.
 4. Open any model or profile page on makerworld.com.
@@ -41,4 +67,4 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con export CSV e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
-**Installazione manuale:** scarica lo zip dall'[ultima release](https://github.com/emanueletech/makerpulse/releases/latest), decomprimilo, apri `chrome://extensions`, attiva la **Modalità sviluppatore** e scegli **Carica estensione non pacchettizzata**.
+**Installazione manuale:** [scarica lo zip](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip), decomprimilo, apri `chrome://extensions`, attiva la **Modalità sviluppatore** e scegli **Carica estensione non pacchettizzata**.
