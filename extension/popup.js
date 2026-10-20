@@ -1,6 +1,16 @@
 const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, collapsed: false };
 const IT = (navigator.language || '').toLowerCase().startsWith('it');
 const TEXT = {
+  thanks: ['Thanks for using MakerPulse! A side project made by a MakerWorld creator, for creators.', 'Grazie per usare MakerPulse! Un progetto nato da un creator di MakerWorld, per i creator.'],
+  local: [
+    'Not affiliated with Bambu Lab. It runs locally in your browser and sends no data anywhere. Found a bug? Let me know on GitHub.',
+    'Non è affiliato a Bambu Lab. Funziona in locale nel tuo browser e non invia dati a nessuno. Hai trovato un bug? Scrivimi su GitHub.',
+  ],
+  ask: ['Like it? Support me with a free Boost on one of my models!', 'Ti piace? Supportami con un Boost gratuito su uno dei miei modelli!'],
+  boostNote: ['*The button opens my models on MakerWorld', '*Il pulsante apre i miei modelli su MakerWorld'],
+  settings: ['Settings', 'Impostazioni'],
+  start: ['Open any model or profile page on MakerWorld and the MakerPulse panel appears at the bottom right.', 'Apri una pagina modello o profilo su MakerWorld: il pannello MakerPulse compare in basso a destra.'],
+  startLink: ['Try it now →', 'Provalo ora →'],
   modelPanel: ['Panel on model pages', 'Pannello sulle pagine modello'],
   profilePanel: ['Panel on profile pages', 'Pannello sulle pagine profilo'],
   pointsPanel: ['Points, gift cards and redemption (logged-in account)', 'Punti, gift card e riscatto (account loggato)'],
@@ -11,6 +21,9 @@ const TEXT = {
   note: ['Changes apply immediately to open tabs.', 'Le modifiche si applicano subito alle schede aperte.'],
 };
 document.documentElement.lang = IT ? 'it' : 'en';
+// Aperta in una scheda alla prima installazione come pagina di benvenuto.
+document.body.classList.toggle('welcome', new URLSearchParams(location.search).has('welcome'));
+document.querySelector('.version').textContent = `MakerPulse ${IT ? 'versione' : 'version'} ${chrome.runtime.getManifest().version}`;
 for (const el of document.querySelectorAll('[data-t]')) el.textContent = TEXT[el.dataset.t][IT ? 1 : 0];
 chrome.storage.sync.get(DEFAULTS).then((s) => {
   for (const k in DEFAULTS) {

@@ -31,5 +31,8 @@
       "run_at": "document_idle"
     }
   ],
-  "short_name": "MakerPulse"
+  "short_name": "MakerPulse",
+  "background": {
+    "service_worker": "background.js"
+  }
 }

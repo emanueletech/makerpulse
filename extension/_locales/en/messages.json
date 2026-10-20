@@ -1,4 +1,8 @@
 {
-  "name": { "message": "MakerPulse – Stats & Points for MakerWorld" },
-  "description": { "message": "Advanced stats, points, gift cards, review filters and a models table for MakerWorld creators." }
+  "name": {
+    "message": "MakerPulse – Stats & Points for MakerWorld"
+  },
+  "description": {
+    "message": "Stats, points, gift cards, review filters, quick replies and a models table for MakerWorld creators."
+  }
 }
