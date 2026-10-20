@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; width: 300px; font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1f2328; background: #fff; }
+  header { background: #00ae42; color: #fff; padding: 10px 14px; font-weight: 700; }
+  main { padding: 10px 14px 14px; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 120px; margin-top: 4px; font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; border: 1px solid #d8dee4; border-radius: 6px; padding: 6px; resize: vertical; }
+  h3 { font-size: 12px; margin: 12px 0 0; }
+  label { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
+  p { margin: 10px 0 0; color: #59636e; font-size: 12px; }
+  @media (prefers-color-scheme: dark) { body { background: #1c2128; color: #e6edf3; } p { color: #9198a1; } textarea { background: #22272e; color: #e6edf3; border-color: #444c56; } }
+</style>
+</head>
+<body>
+<header>MakerPulse</header>
+<main>
+  <label><input type="checkbox" id="modelPanel"> <span data-t="modelPanel"></span></label>
+  <label><input type="checkbox" id="profilePanel"> <span data-t="profilePanel"></span></label>
+  <label><input type="checkbox" id="pointsPanel"> <span data-t="pointsPanel"></span></label>
+  <label><input type="checkbox" id="quickReplies"> <span data-t="quickReplies"></span></label>
+  <label><input type="checkbox" id="collapsed"> <span data-t="collapsed"></span></label>
+  <h3 data-t="repliesTitle"></h3>
+  <textarea id="replies" spellcheck="true"></textarea>
+  <p data-t="repliesHint"></p>
+  <p data-t="note"></p>
+</main>
+<script src="replies.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
