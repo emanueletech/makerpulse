@@ -5,7 +5,8 @@
 
 <p align="center">
   <a href="https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip"><img src="https://img.shields.io/badge/Download-ZIP-00AE42?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
-  <img src="https://img.shields.io/badge/Chrome_Web_Store-coming_soon-lightgrey?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store: coming soon">
+  <img src="https://img.shields.io/badge/Chrome_Web_Store-in_review-lightgrey?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store: in review">
+  <img src="https://img.shields.io/badge/Edge_Add--ons-in_review-lightgrey?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons: in review">
 </p>
 
 <p align="center">
@@ -46,8 +47,8 @@
 
 ## Install
 
-### Chrome Web Store
-Coming soon.
+### Chrome Web Store and Edge Add-ons
+Submitted, currently in review. Until then, use the manual install below.
 
 ### Manual install (Chrome, Edge, Brave, Vivaldi)
 1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
