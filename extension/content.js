@@ -508,14 +508,24 @@
     }
     return null;
   }
-  async function pickLanguage(ed) {
+  // Il modello a cui si riferisce il commento: quello della pagina o, nelle notifiche, quello linkato nella notifica.
+  function editorDesign(ed) {
     const r = route();
-    if (r?.type !== 'model') return;
+    if (r?.type === 'model') return r.id;
+    for (let p = ed.parentElement; p; p = p.parentElement) {
+      const m = p.querySelector('a[href*="/models/"]')?.href.match(/\/models\/(\d+)/);
+      if (m) return m[1];
+    }
+    return null;
+  }
+  async function pickLanguage(ed) {
+    const id = editorDesign(ed);
+    if (!id) return;
     // Il campo riceve il focus un attimo prima che MakerWorld scriva "Reply @utente".
     let handle = null;
     for (let i = 0; i < 15 && !(handle = replyTarget(ed)) && qrTarget === ed; i++) await new Promise((res) => setTimeout(res, 100));
     if (!handle) return;
-    const items = await designComments(r.id);
+    const items = await designComments(id);
     const text = items
       .filter((i) => (i.user.handle || '').toLowerCase() === handle.toLowerCase() && i.orig.trim())
       .slice(0, 3)
@@ -528,11 +538,12 @@
     placeQr();
   }
 
-  // Solo gli editor di commenti e risposte di un modello (div contenteditable nella sezione commenti),
+  // Solo gli editor di commenti e risposte (sezione commenti del modello o notifiche dei commenti),
   // non Bio, upload, tag o altri campi di testo.
   document.addEventListener('focusin', (e) => {
     const ed = e.target.closest?.('.js-editable-content');
-    if (!settings.quickReplies || route()?.type !== 'model' || !ed?.closest('.js-comment-and-rating form')) return;
+    const inComments = route()?.type === 'model' ? ed?.closest('.js-comment-and-rating form') : /\/my\/notification\//.test(location.pathname) && ed?.closest('.comment-reply-container form');
+    if (!settings.quickReplies || !inComments) return;
     if (!host.isConnected) document.documentElement.appendChild(host);
     const isNew = qrTarget !== ed;
     qrTarget = ed;
