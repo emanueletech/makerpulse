@@ -43,8 +43,26 @@
   // ---------- account loggato: punti, gift card, riscatto in denaro ----------
   const local = globalThis.chrome?.storage?.local;
   const mem = {};
-  const lget = async (k) => (local ? (await local.get(k))[k] : mem[k]);
-  const lset = (k, v) => (local ? local.set({ [k]: v }) : (mem[k] = v));
+  // Dopo un aggiornamento dell'estensione le schede già aperte restano con lo script vecchio, scollegato:
+  // le API chrome.* lanciano errori, quindi si ripiega sulla memoria per non bloccare il pannello.
+  const alive = () => !!globalThis.chrome?.runtime?.id;
+  const lget = async (k) => {
+    try {
+      if (local && alive()) return (await local.get(k))[k];
+    } catch {}
+    return mem[k];
+  };
+  const lset = async (k, v) => {
+    mem[k] = v;
+    try {
+      if (local && alive()) await local.set({ [k]: v });
+    } catch {}
+  };
+  const save = (o) => {
+    try {
+      if (alive()) store?.set(o);
+    } catch {}
+  };
 
   let mePromise = null;
   const me = () =>
@@ -73,7 +91,9 @@
   async function loadBills(uid, onProgress) {
     const key = `bills2:${uid}`;
     let agg = await lget(key);
-    local?.remove(`bills:${uid}`); // cache della versione precedente
+    try {
+      if (alive()) local?.remove(`bills:${uid}`); // cache della versione precedente
+    } catch {}
     const head = await api('/api/v1/point-service/point-bill/my?offset=0&limit=1&filter=all');
     if (!agg || head.total < agg.count) agg = { count: 0, byDesign: {}, byDay: {}, byDayEx: {}, boosters: {} };
     const need = head.total - agg.count;
@@ -251,7 +271,7 @@
     el.innerHTML = html;
     el.querySelector('.reg')?.addEventListener('change', (e) => {
       settings.giftRegion = e.target.value;
-      store?.set({ giftRegion: e.target.value });
+      save({ giftRegion: e.target.value });
       mountPoints(el, token);
     });
   }
@@ -403,7 +423,7 @@
     settings.collapsed = c;
     panel.classList.toggle('collapsed', c);
     root.querySelector('.tog').textContent = c ? '▸' : '▾';
-    store?.set({ collapsed: c });
+    save({ collapsed: c });
   }
   root.querySelector('.head').addEventListener('click', (e) => {
     if (!e.target.closest('.x')) setCollapsed(!settings.collapsed);
@@ -542,7 +562,7 @@
       const key = qrLang === 'it' ? 'repliesIt' : 'repliesEn';
       if (txt && !replies(qrLang).includes(txt)) {
         settings[key] = [...replies(qrLang), txt];
-        store?.set({ [key]: settings[key] });
+        save({ [key]: settings[key] });
       }
     } else {
       // insertText passa dagli eventi input, così l'editor del sito registra il testo
@@ -1253,8 +1273,10 @@
     if (Array.isArray(settings.replies)) {
       const key = IT ? 'repliesIt' : 'repliesEn';
       if (!settings[key]) settings[key] = settings.replies;
-      store?.set({ [key]: settings[key] });
-      store?.remove('replies');
+      save({ [key]: settings[key] });
+      try {
+        if (alive()) store?.remove('replies');
+      } catch {}
       settings.replies = null;
     }
     globalThis.chrome?.storage?.onChanged?.addListener((ch, area) => {
