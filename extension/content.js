@@ -528,10 +528,11 @@
     placeQr();
   }
 
-  // Gli editor dei commenti di MakerWorld sono div contenteditable dentro un <form>.
+  // Solo gli editor di commenti e risposte di un modello (div contenteditable nella sezione commenti),
+  // non Bio, upload, tag o altri campi di testo.
   document.addEventListener('focusin', (e) => {
-    const ed = e.target.closest?.('.js-editable-content, textarea');
-    if (!settings.quickReplies || !ed?.closest('form')) return;
+    const ed = e.target.closest?.('.js-editable-content');
+    if (!settings.quickReplies || route()?.type !== 'model' || !ed?.closest('.js-comment-and-rating form')) return;
     if (!host.isConnected) document.documentElement.appendChild(host);
     const isNew = qrTarget !== ed;
     qrTarget = ed;
