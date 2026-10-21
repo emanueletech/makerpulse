@@ -430,7 +430,7 @@
   };
   const qr = root.querySelector('.qr');
   let qrTarget = null;
-  let qrLang = IT ? 'it' : 'en';
+  let qrLang = 'en'; // inglese di default: l'italiano solo se il commento a cui rispondi è in italiano
   let qrAuto = false; // true se la lingua è stata rilevata dal commento
 
   function drawQr() {
@@ -516,7 +516,7 @@
     const isNew = qrTarget !== ed;
     qrTarget = ed;
     if (isNew) {
-      qrLang = IT ? 'it' : 'en';
+      qrLang = 'en';
       qrAuto = false;
       pickLanguage(ed);
     }

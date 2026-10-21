@@ -20,8 +20,8 @@ const TEXT = {
   quickReplies: ['Quick replies in comment boxes', 'Risposte rapide nei commenti'],
   repliesTitle: ['Quick replies (one per line)', 'Risposte rapide (una per riga)'],
   repliesLang: [
-    "MakerPulse picks the language of the person you're replying to: Italian for Italian comments, English for all the others. You can switch it from the bar too.",
-    'MakerPulse sceglie la lingua di chi ti ha scritto: italiano per i commenti in italiano, inglese per tutti gli altri. Puoi cambiarla anche dalla barra.',
+    "Replies start in English. MakerPulse switches to Italian only when the comment you're replying to is in Italian. You can switch it from the bar too.",
+    "Le risposte partono in inglese. MakerPulse passa all'italiano solo se il commento a cui rispondi è in italiano. Puoi cambiarla anche dalla barra.",
   ],
   repliesHint: ['Empty the box to restore the defaults. The + button next to a comment box saves the text you typed.', 'Svuota il riquadro per ripristinare quelle predefinite. Il tasto + accanto al commento salva il testo che hai scritto.'],
   note: ['Changes apply immediately to open tabs.', 'Le modifiche si applicano subito alle schede aperte.'],
