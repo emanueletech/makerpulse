@@ -35,7 +35,7 @@
 
 - **Model page** – downloads, prints, likes, collections, boosts, comments, print/download and like/download ratios, downloads per day, per-profile breakdown (downloads, prints, rating, print time). On your own models: points earned (total, last 30 and 7 days, from boosts) and their gift card value.
 - **Points & gift cards** – total, exclusive and regular points, points earned in the last 7 and 30 days, how many gift cards you can redeem per region and how many points to the next one, cash redemption amount, top-earning models.
-- **Reviews & comments** – loads every comment and filters by stars, text, photos, successful print, boost, or unanswered; search and sorting.
+- **Reviews & comments** – loads every comment and filters by stars, text, photos, successful print, boost, or unanswered; search and sorting. Click a result to jump to it on the page.
 - **Models table** – every model of a creator in a sortable table with totals and CSV export (with points per model on your own profile).
 - **Quick replies** – your saved replies appear above any comment or reply box; one click inserts them. Edit them in the popup or save what you just typed with `+`.
 - Works with every MakerWorld language and with in-site navigation (no reload needed). English and Italian interface.

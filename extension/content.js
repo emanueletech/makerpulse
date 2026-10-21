@@ -306,6 +306,8 @@
     .mbody { overflow: auto; padding: 4px 16px 16px; background: var(--plate); }
     .item { display: flex; gap: 12px; padding: 14px; margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-sm); }
     .item img.av { width: 40px; height: 40px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
+    .item[data-id] { cursor: pointer; transition: border-color .12s, transform .12s; }
+    .item[data-id]:hover { border-color: var(--green); transform: translateY(-1px); }
     .item .meta { color: var(--slate); font-size: 12px; margin-bottom: 5px; }
     .item .meta a { color: var(--ink); text-decoration: none; }
     .item .txt { white-space: pre-wrap; word-break: break-word; font-size: 13.5px; line-height: 1.5; }
@@ -601,7 +603,7 @@
         out
           .slice(0, 500)
           .map(
-            (i) => `<div class="item">
+            (i) => `<div class="item" data-id="${i.id}" data-kind="${i.kind}" data-handle="${esc(i.user.handle)}" title="${t('Show on the page', 'Mostra sulla pagina')}">
           ${i.user.avatar ? `<img class="av" src="${esc(thumb(i.user.avatar, 64))}" alt="">` : ''}
           <div>
             <div class="meta"><a href="${lp}/@${esc(i.user.handle)}" target="_blank" rel="noopener"><b>${esc(i.user.name || i.user.handle || t('User', 'Utente'))}</b></a>
@@ -617,7 +619,49 @@
           .join('') || `<p class="muted">${t('No results with these filters.', 'Nessun risultato con questi filtri.')}</p>`;
     };
     tb.addEventListener('input', draw);
+    list.addEventListener('click', (e) => {
+      const it = e.target.closest('.item[data-id]');
+      if (!it || e.target.closest('a')) return; // link a profilo e foto restano normali
+      goToComment(id, it.dataset);
+    });
     draw();
+  }
+
+  // ---------- vai al commento sulla pagina ----------
+  // MakerWorld mette in cima alla lista il messaggio indicato da ?replyId=…&replyType=… (1 commento, 2 recensione),
+  // lo stesso meccanismo dei link dalle notifiche; dopo il caricamento l'estensione ci scorre e lo evidenzia.
+  function goToComment(designId, d) {
+    try {
+      sessionStorage.setItem('makerpulse-goto', JSON.stringify({ id: d.id, handle: d.handle, at: Date.now() }));
+    } catch {}
+    location.href = `${localePrefix()}/models/${designId}?replyId=${d.id}&replyType=${d.kind === 'rating' ? 2 : 1}`;
+  }
+  async function scrollToPendingComment() {
+    let g;
+    try {
+      g = JSON.parse(sessionStorage.getItem('makerpulse-goto') || 'null');
+      sessionStorage.removeItem('makerpulse-goto');
+    } catch {}
+    const replyId = new URLSearchParams(location.search).get('replyId');
+    if (!g || g.id !== replyId || Date.now() - g.at > 60e3 || !g.handle) return;
+    // Il messaggio richiesto è il primo link al suo autore che compare sotto il campo per scrivere un commento.
+    const find = () => {
+      const editor = document.querySelector('.js-editable-content');
+      const minTop = editor ? editor.getBoundingClientRect().bottom : 0;
+      return [...document.querySelectorAll(`a[href*="/@${CSS.escape(g.handle)}"]`)].find(
+        (a) => a.textContent.trim() && a.getBoundingClientRect().top > minTop
+      );
+    };
+    let a;
+    for (let i = 0; i < 60 && !(a = find()); i++) await new Promise((r) => setTimeout(r, 250));
+    if (!a) return;
+    let card = a;
+    while (card.parentElement && card.offsetWidth < 400) card = card.parentElement;
+    while (card.parentElement && card.offsetHeight < 70) card = card.parentElement;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const prev = { outline: card.style.outline, offset: card.style.outlineOffset, radius: card.style.borderRadius };
+    Object.assign(card.style, { outline: '3px solid #00ae42', outlineOffset: '6px', borderRadius: '12px' });
+    setTimeout(() => Object.assign(card.style, { outline: prev.outline, outlineOffset: prev.offset, borderRadius: prev.radius }), 4000);
   }
 
   // ---------- pagina profilo ----------
@@ -810,6 +854,7 @@
       }
     });
     render();
+    scrollToPendingComment();
     setInterval(render, 500);
     window.addEventListener('popstate', render);
   }
