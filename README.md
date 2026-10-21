@@ -41,7 +41,7 @@
 - **Forecasts & boosters** – the date you'll reach the next gift card or the cash minimum at your current pace, and who boosted you in the last 30 days.
 - **Model cards** – prints, boosts, print rate and hot score shown on every model card on home, search and profile pages.
 - **Models table** – every model of a creator in a sortable table with totals and CSV export (with points per model on your own profile).
-- **Quick replies** – your saved replies appear above any comment or reply box; one click inserts them. Edit them in the popup or save what you just typed with `+`.
+- **Quick replies** – your saved replies appear above any comment or reply box, in the language of the person you're replying to (Italian or English); hover to read the full text, click to insert. Edit them in the popup or save what you just typed with `+`.
 - Works with every MakerWorld language and with in-site navigation (no reload needed). English and Italian interface.
 
 ## Install

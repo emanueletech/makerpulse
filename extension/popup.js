@@ -19,6 +19,10 @@ const TEXT = {
   cardStats: ['Prints and boosts on model cards', 'Stampe e boost sulle schede modello'],
   quickReplies: ['Quick replies in comment boxes', 'Risposte rapide nei commenti'],
   repliesTitle: ['Quick replies (one per line)', 'Risposte rapide (una per riga)'],
+  repliesLang: [
+    "MakerPulse picks the language of the person you're replying to: Italian for Italian comments, English for all the others. You can switch it from the bar too.",
+    'MakerPulse sceglie la lingua di chi ti ha scritto: italiano per i commenti in italiano, inglese per tutti gli altri. Puoi cambiarla anche dalla barra.',
+  ],
   repliesHint: ['Empty the box to restore the defaults. The + button next to a comment box saves the text you typed.', 'Svuota il riquadro per ripristinare quelle predefinite. Il tasto + accanto al commento salva il testo che hai scritto.'],
   note: ['Changes apply immediately to open tabs.', 'Le modifiche si applicano subito alle schede aperte.'],
 };
@@ -35,16 +39,21 @@ chrome.storage.sync.get(DEFAULTS).then((s) => {
   }
 });
 
-// Risposte rapide: null = testi predefiniti (decisi dal content script in base alla lingua).
-const box = document.getElementById('replies');
-chrome.storage.sync.get({ replies: null }).then(({ replies }) => {
-  box.value = (replies || MAKERPULSE_DEFAULT_REPLIES[IT ? 'it' : 'en']).join('\n');
+// Risposte rapide in due lingue: null = testi predefiniti. "replies" è l'elenco unico della versione precedente.
+chrome.storage.sync.get({ replies: null, repliesIt: null, repliesEn: null }).then((st) => {
+  const old = IT ? 'repliesIt' : 'repliesEn';
+  if (Array.isArray(st.replies) && !st[old]) st[old] = st.replies;
+  for (const box of document.querySelectorAll('textarea[data-lang]')) {
+    const lang = box.dataset.lang;
+    box.value = (st[box.id] || MAKERPULSE_DEFAULT_REPLIES[lang]).join('\n');
+    let timer;
+    box.oninput = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const list = box.value.split('\n').map((l) => l.trim()).filter(Boolean);
+        chrome.storage.sync.set({ [box.id]: list.length ? list : null });
+        chrome.storage.sync.remove('replies');
+      }, 400);
+    };
+  }
 });
-let timer;
-box.oninput = () => {
-  clearTimeout(timer);
-  timer = setTimeout(() => {
-    const list = box.value.split('\n').map((l) => l.trim()).filter(Boolean);
-    chrome.storage.sync.set({ replies: list.length ? list : null });
-  }, 400);
-};

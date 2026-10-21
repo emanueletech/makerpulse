@@ -4,7 +4,7 @@
   window.__makerPulse = true;
 
   // ---------- impostazioni ----------
-  const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, cardStats: true, replies: null, collapsed: false, giftRegion: '' };
+  const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, cardStats: true, replies: null, repliesEn: null, repliesIt: null, collapsed: false, giftRegion: '' };
   let settings = { ...DEFAULTS };
   const store = globalThis.chrome?.storage?.sync;
 
@@ -382,6 +382,9 @@
       border-radius: 14px; box-shadow: var(--shadow-lg); font-size: 12px; border-top: 3px solid var(--green); }
     .qr button { border: 1px solid var(--line); background: var(--plate); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: transform .08s; }
     .qr button:hover { border-color: var(--green); background: var(--green-soft); transform: translateY(-1px); }
+    .qr .prev { flex-basis: 100%; order: -1; padding: 6px 10px; border-radius: 10px; background: var(--plate); color: var(--slate); font-size: 12px; line-height: 1.45; white-space: normal; }
+    .qr .prev.on { color: var(--ink); background: var(--green-soft); }
+    .qr button.lang { background: var(--graphite); border-color: var(--graphite); color: #fff; font-weight: 600; }
     .qr button.save { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; box-shadow: 0 2px 0 var(--green-deep); }
   </style>
   <div class="panel" hidden>
@@ -420,16 +423,32 @@
   }
 
   // ---------- risposte rapide nei commenti ----------
-  const DEFAULT_REPLIES = globalThis.MAKERPULSE_DEFAULT_REPLIES?.[IT ? 'it' : 'en'] || [];
-  const replies = () => (Array.isArray(settings.replies) && settings.replies.length ? settings.replies : DEFAULT_REPLIES);
+  // Testi in inglese e italiano: si usa la lingua di chi ha scritto il commento a cui rispondi (inglese per le altre lingue).
+  const replies = (lang) => {
+    const own = settings[lang === 'it' ? 'repliesIt' : 'repliesEn'];
+    return Array.isArray(own) && own.length ? own : globalThis.MAKERPULSE_DEFAULT_REPLIES?.[lang] || [];
+  };
   const qr = root.querySelector('.qr');
   let qrTarget = null;
+  let qrLang = IT ? 'it' : 'en';
+  let qrAuto = false; // true se la lingua è stata rilevata dal commento
 
   function drawQr() {
     qr.innerHTML =
-      replies().map((r, i) => `<button data-i="${i}" title="${esc(r)}">${esc(r.length > 40 ? `${r.slice(0, 38)}…` : r)}</button>`).join('') +
-      `<button class="save" title="${t('Save the current text as a quick reply', 'Salva il testo attuale come risposta rapida')}">+</button>`;
+      `<button class="lang" title="${t('Language of the replies: click to switch', 'Lingua delle risposte: clicca per cambiarla')}">${qrLang === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}${qrAuto ? ' · auto' : ''}</button>` +
+      replies(qrLang).map((r, i) => `<button data-i="${i}" title="${esc(r)}">${esc(r.length > 40 ? `${r.slice(0, 38)}…` : r)}</button>`).join('') +
+      `<button class="save" title="${t('Save the current text as a quick reply', 'Salva il testo attuale come risposta rapida')}">+</button>` +
+      `<div class="prev">${t('Hover a reply to read it all, click to insert it', 'Passa sopra una risposta per leggerla tutta, clicca per inserirla')}</div>`;
   }
+  // Anteprima del testo completo al passaggio del mouse.
+  qr.addEventListener('mouseover', (e) => {
+    const b = e.target.closest('button[data-i]');
+    const prev = qr.querySelector('.prev');
+    if (!prev) return;
+    prev.classList.toggle('on', !!b);
+    prev.textContent = b ? replies(qrLang)[+b.dataset.i] : t('Hover a reply to read it all, click to insert it', 'Passa sopra una risposta per leggerla tutta, clicca per inserirla');
+    placeQr();
+  });
   function placeQr() {
     if (qr.hidden) return;
     if (!qrTarget?.isConnected) return hideQr();
@@ -437,18 +456,70 @@
     qr.style.left = `${Math.max(8, r.left)}px`;
     qr.style.maxWidth = `${Math.max(280, r.width)}px`;
     const h = qr.offsetHeight;
-    qr.style.top = `${r.top - h - 6 > 8 ? r.top - h - 6 : r.bottom + 6}px`; // sopra l'editor, o sotto se non c'è spazio
+    qr.style.top = `${r.top - h - 14 > 8 ? r.top - h - 14 : r.bottom + 8}px`; // sopra l'editor, o sotto se non c'è spazio
   }
   function hideQr() {
     qr.hidden = true;
     qrTarget = null;
   }
+
+  // Lingua di un testo: rilevatore di Chrome, con un controllo di riserva sulle parole italiane più comuni.
+  async function detectLang(text) {
+    try {
+      const r = await chrome.i18n.detectLanguage(text);
+      const top = r?.languages?.[0];
+      if (top?.language) return top.language.startsWith('it') ? 'it' : 'en';
+    } catch {}
+    const hits = text.toLowerCase().match(/\b(che|non|sono|grazie|molto|della|questo|questa|stampa|stampato|ciao|anche|bellissimo|bellissima|progetto|perfetto|davvero|tutto|ottimo)\b/g);
+    return (hits?.length || 0) >= 2 ? 'it' : 'en';
+  }
+  // Commenti del modello (testo originale), caricati una volta per pagina.
+  const commentsCache = new Map();
+  const designComments = (id) => {
+    if (!commentsCache.has(id)) commentsCache.set(id, loadComments(id).catch(() => []));
+    return commentsCache.get(id);
+  };
+  // A chi stai rispondendo: MakerWorld scrive "Reply @utente" come segnaposto del campo di risposta.
+  function replyTarget(ed) {
+    let p = ed.parentElement;
+    for (let i = 0; i < 3 && p; i++, p = p.parentElement) {
+      const m = p.innerText.replace(ed.innerText, '').match(/@([\w.\-]+)/);
+      if (m) return m[1];
+    }
+    return null;
+  }
+  async function pickLanguage(ed) {
+    const r = route();
+    if (r?.type !== 'model') return;
+    // Il campo riceve il focus un attimo prima che MakerWorld scriva "Reply @utente".
+    let handle = null;
+    for (let i = 0; i < 15 && !(handle = replyTarget(ed)) && qrTarget === ed; i++) await new Promise((res) => setTimeout(res, 100));
+    if (!handle) return;
+    const items = await designComments(r.id);
+    const text = items
+      .filter((i) => (i.user.handle || '').toLowerCase() === handle.toLowerCase() && i.orig.trim())
+      .slice(0, 3)
+      .map((i) => i.orig)
+      .join('\n');
+    if (!text || qrTarget !== ed) return;
+    qrLang = await detectLang(text);
+    qrAuto = true;
+    drawQr();
+    placeQr();
+  }
+
   // Gli editor dei commenti di MakerWorld sono div contenteditable dentro un <form>.
   document.addEventListener('focusin', (e) => {
     const ed = e.target.closest?.('.js-editable-content, textarea');
     if (!settings.quickReplies || !ed?.closest('form')) return;
     if (!host.isConnected) document.documentElement.appendChild(host);
+    const isNew = qrTarget !== ed;
     qrTarget = ed;
+    if (isNew) {
+      qrLang = IT ? 'it' : 'en';
+      qrAuto = false;
+      pickLanguage(ed);
+    }
     drawQr();
     qr.hidden = false;
     placeQr();
@@ -463,18 +534,23 @@
     const b = e.target.closest('button');
     if (!b || !qrTarget) return;
     qrTarget.focus();
-    if (b.classList.contains('save')) {
+    if (b.classList.contains('lang')) {
+      qrLang = qrLang === 'it' ? 'en' : 'it';
+      qrAuto = false;
+    } else if (b.classList.contains('save')) {
       const txt = (qrTarget.value ?? qrTarget.innerText).trim();
-      if (txt && !replies().includes(txt)) {
-        settings.replies = [...replies(), txt];
-        store?.set({ replies: settings.replies });
-        drawQr();
-        placeQr();
+      const key = qrLang === 'it' ? 'repliesIt' : 'repliesEn';
+      if (txt && !replies(qrLang).includes(txt)) {
+        settings[key] = [...replies(qrLang), txt];
+        store?.set({ [key]: settings[key] });
       }
+    } else {
+      // insertText passa dagli eventi input, così l'editor del sito registra il testo
+      document.execCommand('insertText', false, replies(qrLang)[+b.dataset.i]);
       return;
     }
-    // insertText passa dagli eventi input, così l'editor del sito registra il testo
-    document.execCommand('insertText', false, replies()[+b.dataset.i]);
+    drawQr();
+    placeQr();
   });
   window.addEventListener('scroll', placeQr, true);
   window.addEventListener('resize', placeQr);
@@ -530,7 +606,9 @@
       <div class="mine"></div>
       <div class="btns"><button class="btn" data-act="comments">${t('Filter comments and reviews', 'Filtra commenti e recensioni')}</button></div>`;
     body.querySelector('[data-act=comments]').onclick = () => openComments(id, d.titleTranslated || d.title);
-    if (settings.pointsPanel && (await isMe(d.designCreator?.handle))) modelPoints(id, body.querySelector('.mine'), token).catch(() => {});
+    const own = await isMe(d.designCreator?.handle);
+    if (own && settings.quickReplies) designComments(id); // per scegliere subito la lingua delle risposte rapide
+    if (own && settings.pointsPanel) modelPoints(id, body.querySelector('.mine'), token).catch(() => {});
   }
 
   async function modelPoints(id, el, token) {
@@ -552,7 +630,7 @@
     if (h.ratingItem) {
       const r = h.ratingItem;
       return {
-        kind: 'rating', id: r.id, score: r.score || 0, text: r.contentTranslated || r.content || '', images: r.images || [],
+        kind: 'rating', id: r.id, score: r.score || 0, text: r.contentTranslated || r.content || '', orig: r.content || '', images: r.images || [],
         user: r.creator || {}, time: r.createTime, likes: r.likeCount || 0, replies: r.replyCount || 0,
         authorReplied: !!r.replyByInstanceUser, boosted: !!r.boosted, printed: !!r.successPrinted,
         profile: r.instInfo?.title || '',
@@ -560,7 +638,7 @@
     }
     const c = h.comment || {};
     return {
-      kind: 'comment', id: c.id, score: 0, text: c.contentTranslated || c.content || '', images: c.images || [],
+      kind: 'comment', id: c.id, score: 0, text: c.contentTranslated || c.content || '', orig: c.content || '', images: c.images || [],
       user: c.user || {}, time: c.createTime, likes: c.likeCount || 0, replies: c.replyCount || 0,
       authorReplied: !!c.replyByDesignUser, boosted: !!c.boosted, printed: false, profile: '',
     };
@@ -1171,6 +1249,14 @@
 
   async function init() {
     if (store) settings = { ...DEFAULTS, ...(await store.get(DEFAULTS)) };
+    // Versione precedente: un solo elenco di risposte, nella lingua dell'interfaccia.
+    if (Array.isArray(settings.replies)) {
+      const key = IT ? 'repliesIt' : 'repliesEn';
+      if (!settings[key]) settings[key] = settings.replies;
+      store?.set({ [key]: settings[key] });
+      store?.remove('replies');
+      settings.replies = null;
+    }
     globalThis.chrome?.storage?.onChanged?.addListener((ch, area) => {
       if (area !== 'sync') return;
       for (const k in ch) settings[k] = ch[k].newValue;
