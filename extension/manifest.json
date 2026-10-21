@@ -25,6 +25,16 @@
         "https://makerworld.com/*"
       ],
       "js": [
+        "hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://makerworld.com/*"
+      ],
+      "js": [
         "replies.js",
         "content.js"
       ],

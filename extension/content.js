@@ -4,7 +4,7 @@
   window.__makerPulse = true;
 
   // ---------- impostazioni ----------
-  const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, replies: null, collapsed: false, giftRegion: '' };
+  const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, cardStats: true, replies: null, collapsed: false, giftRegion: '' };
   let settings = { ...DEFAULTS };
   const store = globalThis.chrome?.storage?.sync;
 
@@ -71,10 +71,11 @@
     return bills.promise;
   }
   async function loadBills(uid, onProgress) {
-    const key = `bills:${uid}`;
+    const key = `bills2:${uid}`;
     let agg = await lget(key);
+    local?.remove(`bills:${uid}`); // cache della versione precedente
     const head = await api('/api/v1/point-service/point-bill/my?offset=0&limit=1&filter=all');
-    if (!agg || head.total < agg.count) agg = { count: 0, byDesign: {}, byDay: {} };
+    if (!agg || head.total < agg.count) agg = { count: 0, byDesign: {}, byDay: {}, byDayEx: {}, boosters: {} };
     const need = head.total - agg.count;
     for (let off = 0; off < need; off += 500) {
       const j = await api(`/api/v1/point-service/point-bill/my?offset=${off}&limit=${Math.min(500, need - off)}&filter=all`);
@@ -85,6 +86,7 @@
     agg.count = head.total;
     const cut = daysAgo(KEEP_DAYS);
     for (const d in agg.byDay) if (d < cut) delete agg.byDay[d];
+    for (const d in agg.byDayEx) if (d < cut) delete agg.byDayEx[d];
     for (const id in agg.byDesign) for (const d in agg.byDesign[id].d) if (d < cut) delete agg.byDesign[id].d[d];
     await lset(key, agg);
     return agg;
@@ -96,6 +98,11 @@
     const id = x.id || x.designId;
     const day = x.earningTime || (b.pointTime || b.createTime || '').slice(0, 10);
     agg.byDay[day] = (agg.byDay[day] || 0) + pts;
+    agg.byDayEx[day] = (agg.byDayEx[day] || 0) + (b.pointChangeExclusive || 0);
+    if (b.type === 'boost_exchange_point' && x.fromUserHandle) {
+      const u = (agg.boosters[x.fromUserHandle] ||= { n: x.fromUsername || x.fromUserHandle, d: {} });
+      u.d[day] = (u.d[day] || 0) + 1;
+    }
     if (!id) return;
     const e = (agg.byDesign[id] ||= { t: x.title || x.designTitle || '', all: 0, ex: 0, boost: 0, d: {} });
     e.all += pts;
@@ -135,6 +142,14 @@
     return best ? money((n * best.value) / best.price, best.cur) : '–';
   };
 
+  // Data stimata in cui si accumulano `need` punti al ritmo medio degli ultimi 30 giorni.
+  const eta = (need, perDay) => {
+    if (need <= 0) return '';
+    if (!(perDay > 0)) return '';
+    const d = new Date(Date.now() + Math.ceil(need / perDay) * 864e5);
+    return ` · ${t('expected around', 'previsto verso il')} <b>${d.toLocaleDateString(LOC, { day: 'numeric', month: 'short' })}</b>`;
+  };
+
   async function pointsSummary() {
     const html = await (await fetch(`${localePrefix()}/points`, { credentials: 'include' })).text();
     const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
@@ -154,6 +169,8 @@
       pointBills(m.uid, onProgress).catch(() => null),
     ]);
     const total = s.userTotalPoint;
+    const rate = agg ? sumSince(agg.byDay, 30) / 30 : 0;
+    const rateEx = agg ? sumSince(agg.byDayEx, 30) / 30 : 0;
     let html = `<h4>${t('My points', 'I miei punti')}</h4><div class="grid">
       ${stat(fmt(Math.floor(total)), t('Total points', 'Punti totali'))}
       ${stat(fmt(Math.floor(s.userTotalExclusivePoint)), t('Exclusive points', 'Punti esclusivi'))}
@@ -180,7 +197,7 @@
           const rest = total - n * c.price;
           return `<div class="row"><span>${money(c.value, c.cur)} · ${fmt(c.price)} pt</span><b>${n}×</b></div>
           <div class="bar gold"><i style="width:${((rest / c.price) * 100).toFixed(1)}%"></i></div>
-          <div class="muted">${t(`${fmt(Math.ceil(c.price - rest))} points to the next one`, `mancano ${fmt(Math.ceil(c.price - rest))} punti alla prossima`)}</div>`;
+          <div class="muted">${t(`${fmt(Math.ceil(c.price - rest))} points to the next one`, `mancano ${fmt(Math.ceil(c.price - rest))} punti alla prossima`)}${eta(c.price - rest, rate)}</div>`;
         })
         .join('');
       html += `<p class="muted">${t('Best redemption', 'Riscattando al meglio')}: <b>${money(value, smallest.cur)}</b> (${combo
@@ -198,7 +215,7 @@
         <div class="muted">${money(cash.oneExclusivePointAmount, cash.currency, 4)} ${t('per exclusive point', 'per punto esclusivo')} · min ${money(cash.redeemMinAmount, cash.currency)}, max ${money(
           cash.redeemMaxAmount,
           cash.currency
-        )} ${t('per request', 'per richiesta')}${ok ? '' : ` · ${t(`${fmt(Math.ceil(min - cash.exclusivePoint))} exclusive points to the minimum`, `mancano ${fmt(Math.ceil(min - cash.exclusivePoint))} punti esclusivi al minimo`)}`}</div>`;
+        )} ${t('per request', 'per richiesta')}${ok ? '' : ` · ${t(`${fmt(Math.ceil(min - cash.exclusivePoint))} exclusive points to the minimum`, `mancano ${fmt(Math.ceil(min - cash.exclusivePoint))} punti esclusivi al minimo`)}${eta(min - cash.exclusivePoint, rateEx)}`}</div>`;
     }
 
     if (agg) {
@@ -208,7 +225,19 @@
         .slice(0, 8);
       html += `<h4>${t('Top-earning models (30 days)', 'Modelli che rendono di più (30 gg)')}</h4><table><thead><tr><th>${t('Model', 'Modello')}</th><th class="n">${t('30 days', '30 gg')}</th><th class="n">${t('Total', 'Totale')}</th></tr></thead><tbody>
         ${top.map((e) => `<tr><td><a href="${localePrefix()}/models/${e.id}">${esc(e.t)}</a></td><td class="n">${fmt(Math.round(e.d30))}</td><td class="n">${fmt(Math.round(e.all))}</td></tr>`).join('')}
-        </tbody></table><p class="muted">${t(`Calculated from your ${fmt(agg.count)} point transactions.`, `Calcolato dalle tue ${fmt(agg.count)} transazioni punti.`)}</p>`;
+        </tbody></table>`;
+      const boosters = Object.entries(agg.boosters)
+        .map(([h, u]) => ({ h, n: u.n, c30: sumSince(u.d, 30), last: Object.keys(u.d).sort().pop() }))
+        .filter((u) => u.c30)
+        .sort((a, b) => b.c30 - a.c30 || (b.last > a.last ? 1 : -1));
+      if (boosters.length)
+        html += `<h4>${t(`Who boosted you (30 days): ${boosters.length}`, `Chi ti ha dato boost (30 gg): ${boosters.length}`)}</h4>
+          <table><thead><tr><th>${t('User', 'Utente')}</th><th class="n">Boost</th><th class="n">${t('Last', 'Ultimo')}</th></tr></thead><tbody>
+          ${boosters
+            .slice(0, 15)
+            .map((u) => `<tr><td><a href="${localePrefix()}/@${encodeURIComponent(u.h)}" target="_blank" rel="noopener">${esc(u.n)}</a></td><td class="n">${u.c30}</td><td class="n">${date(u.last)}</td></tr>`)
+            .join('')}</tbody></table>`;
+      html += `<p class="muted">${t(`Calculated from your ${fmt(agg.count)} point transactions. Forecasts use the average of the last 30 days.`, `Calcolato dalle tue ${fmt(agg.count)} transazioni punti. Le previsioni usano la media degli ultimi 30 giorni.`)}</p>`;
     }
     return html;
   }
@@ -308,6 +337,7 @@
     .item img.av { width: 40px; height: 40px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
     .item[data-id] { cursor: pointer; transition: border-color .12s, transform .12s; }
     .item[data-id]:hover { border-color: var(--green); transform: translateY(-1px); }
+    .item .on { font-size: 12px; color: var(--green-deep); margin-bottom: 3px; }
     .item .meta { color: var(--slate); font-size: 12px; margin-bottom: 5px; }
     .item .meta a { color: var(--ink); text-decoration: none; }
     .item .txt { white-space: pre-wrap; word-break: break-word; font-size: 13.5px; line-height: 1.5; }
@@ -332,6 +362,21 @@
     .models a { color: var(--ink); text-decoration: none; font-weight: 600; }
     .models a:hover { color: var(--green-deep); }
     .models tfoot td { font-weight: 700; background: var(--plate); border-top: 2px solid var(--line); }
+    /* grafici: una serie, barre sottili, griglia a filo, valore nel tooltip */
+    :host { --bar-dl: #00862f; --bar-pts: #a8822f; }
+    @media (prefers-color-scheme: dark) { :host { --bar-dl: #00ae42; } }
+    .trends { background: var(--plate); padding-top: 4px; }
+    .chart { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 6px; box-shadow: var(--shadow-sm); }
+    .chart svg { display: block; width: 100%; height: auto; }
+    .chart .grid line { stroke: var(--line); stroke-width: 1; }
+    .chart text { fill: var(--slate); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .chart.dl path { fill: var(--bar-dl); }
+    .chart.pts path { fill: var(--bar-pts); }
+    .chart path.on { opacity: .75; }
+    .chart .hit { fill: transparent; cursor: default; }
+    .chart .tip { position: absolute; transform: translate(-50%, -100%); pointer-events: none; background: var(--graphite); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 12px; white-space: nowrap; box-shadow: var(--shadow-sm); }
+    .up { color: var(--green-deep); font-weight: 600; }
+    .down { color: #c2410c; font-weight: 600; }
     /* risposte rapide */
     .qr { position: fixed; z-index: 2147483002; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: var(--surface);
       border-radius: 14px; box-shadow: var(--shadow-lg); font-size: 12px; border-top: 3px solid var(--green); }
@@ -524,24 +569,57 @@
   // Miniatura dal CDN di MakerWorld (gli originali pesano diversi MB).
   const thumb = (u, w) => (u && u.includes('bblmw.com') && !u.includes('?') ? `${u}?x-oss-process=image/resize,w_${w}/format,webp` : u);
 
+  // Tutti i commenti e le recensioni di un modello, senza doppioni. onPage(caricati, totale) può restituire false per interrompere.
+  async function loadComments(designId, onPage) {
+    const items = [];
+    for (let offset = 0; ; offset += 50) {
+      const j = await api(`/api/v1/comment-service/commentandrating?designId=${designId}&limit=50&offset=${offset}&msgId=0&msgType=0`);
+      (j.hits || []).forEach((h) => items.push(normalize(h)));
+      if (onPage?.(items.length, j.total) === false) return null;
+      if (!j.hits?.length || j.hits.length < 50 || items.length >= j.total) break;
+    }
+    const seen = new Set();
+    return items.filter((i) => !seen.has(i.kind + i.id) && seen.add(i.kind + i.id));
+  }
+
+  const itemHtml = (i) => {
+    const lp = localePrefix();
+    return `<div class="item" data-id="${i.id}" data-kind="${i.kind}" data-handle="${esc(i.user.handle)}" data-design="${i.design?.id || ''}" title="${t('Show on the page', 'Mostra sulla pagina')}">
+          ${i.user.avatar ? `<img class="av" src="${esc(thumb(i.user.avatar, 64))}" alt="">` : ''}
+          <div>
+            ${i.design ? `<div class="on">${t('on', 'su')} <b>${esc(i.design.title)}</b></div>` : ''}
+            <div class="meta"><a href="${lp}/@${esc(i.user.handle)}" target="_blank" rel="noopener"><b>${esc(i.user.name || i.user.handle || t('User', 'Utente'))}</b></a>
+              · ${date(i.time)}
+              ${i.kind === 'rating' && i.score ? ` · <span class="stars">${'★'.repeat(i.score)}${'☆'.repeat(5 - i.score)}</span>` : ` · ${t('comment', 'commento')}`}
+              ${i.profile ? ` · ${esc(i.profile)}` : ''}
+              ${i.printed ? ` · ✅ ${t('printed', 'stampato')}` : ''}${i.boosted ? ' · 🚀 boost' : ''}${i.authorReplied ? ` · 💬 ${t('author reply', 'risposta autore')}` : ''}
+              ${i.likes ? ` · ♥ ${i.likes}` : ''}</div>
+            <div class="txt">${esc(i.text) || `<span class="muted">${t('(no text)', '(nessun testo)')}</span>`}</div>
+            ${i.images.length ? `<div class="pics">${i.images.map((x) => `<a href="${esc(imgUrl(x))}" target="_blank" rel="noopener"><img src="${esc(thumb(imgUrl(x), 200))}" loading="lazy" alt=""></a>`).join('')}</div>` : ''}
+          </div></div>`;
+  };
+  // Clic su un commento: porta al commento sulla pagina del suo modello.
+  const bindGoTo = (list, designId) =>
+    list.addEventListener('click', (e) => {
+      const it = e.target.closest('.item[data-id]');
+      if (!it || e.target.closest('a')) return; // link a profilo e foto restano normali
+      goToComment(it.dataset.design || designId, it.dataset);
+    });
+
   async function openComments(id, title) {
     openModal(`${t('Comments and reviews', 'Commenti e recensioni')} – ${title}`, `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody"></div>`);
     const sum = modal.querySelector('.sum');
-    const items = [];
+    let all;
     try {
-      for (let offset = 0; ; offset += 50) {
-        const j = await api(`/api/v1/comment-service/commentandrating?designId=${id}&limit=50&offset=${offset}&msgId=0&msgType=0`);
-        if (ovl.hidden) return;
-        (j.hits || []).forEach((h) => items.push(normalize(h)));
-        sum.textContent = `${t('Loading…', 'Caricamento…')} ${items.length} / ${j.total ?? '?'}`;
-        if (!j.hits?.length || j.hits.length < 50 || items.length >= j.total) break;
-      }
+      all = await loadComments(id, (n, total) => {
+        if (ovl.hidden) return false;
+        sum.textContent = `${t('Loading…', 'Caricamento…')} ${n} / ${total ?? '?'}`;
+      });
     } catch (e) {
       sum.innerHTML = `<span class="err">${t('Loading error', 'Errore nel caricamento')}: ${esc(e.message)}</span>`;
       return;
     }
-    const seen = new Set();
-    const all = items.filter((i) => !seen.has(i.kind + i.id) && seen.add(i.kind + i.id));
+    if (!all) return;
     const ratings = all.filter((i) => i.kind === 'rating' && i.score);
     const dist = [5, 4, 3, 2, 1].map((s) => `${s}★ ${ratings.filter((r) => r.score === s).length}`).join(' · ');
     const avg = ratings.length ? (ratings.reduce((s, r) => s + r.score, 0) / ratings.length).toLocaleString(LOC, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–';
@@ -598,32 +676,14 @@
         `${out.length} of ${all.length} shown · ${ratings.length} reviews, average ${avg} · ${dist}`,
         `${out.length} di ${all.length} mostrati · ${ratings.length} recensioni, media ${avg} · ${dist}`
       );
-      const lp = localePrefix();
       list.innerHTML =
         out
           .slice(0, 500)
-          .map(
-            (i) => `<div class="item" data-id="${i.id}" data-kind="${i.kind}" data-handle="${esc(i.user.handle)}" title="${t('Show on the page', 'Mostra sulla pagina')}">
-          ${i.user.avatar ? `<img class="av" src="${esc(thumb(i.user.avatar, 64))}" alt="">` : ''}
-          <div>
-            <div class="meta"><a href="${lp}/@${esc(i.user.handle)}" target="_blank" rel="noopener"><b>${esc(i.user.name || i.user.handle || t('User', 'Utente'))}</b></a>
-              · ${date(i.time)}
-              ${i.kind === 'rating' && i.score ? ` · <span class="stars">${'★'.repeat(i.score)}${'☆'.repeat(5 - i.score)}</span>` : ` · ${t('comment', 'commento')}`}
-              ${i.profile ? ` · ${esc(i.profile)}` : ''}
-              ${i.printed ? ` · ✅ ${t('printed', 'stampato')}` : ''}${i.boosted ? ' · 🚀 boost' : ''}${i.authorReplied ? ` · 💬 ${t('author reply', 'risposta autore')}` : ''}
-              ${i.likes ? ` · ♥ ${i.likes}` : ''}</div>
-            <div class="txt">${esc(i.text) || `<span class="muted">${t('(no text)', '(nessun testo)')}</span>`}</div>
-            ${i.images.length ? `<div class="pics">${i.images.map((x) => `<a href="${esc(imgUrl(x))}" target="_blank" rel="noopener"><img src="${esc(thumb(imgUrl(x), 200))}" loading="lazy" alt=""></a>`).join('')}</div>` : ''}
-          </div></div>`
-          )
+          .map(itemHtml)
           .join('') || `<p class="muted">${t('No results with these filters.', 'Nessun risultato con questi filtri.')}</p>`;
     };
     tb.addEventListener('input', draw);
-    list.addEventListener('click', (e) => {
-      const it = e.target.closest('.item[data-id]');
-      if (!it || e.target.closest('a')) return; // link a profilo e foto restano normali
-      goToComment(id, it.dataset);
-    });
+    bindGoTo(list, id);
     draw();
   }
 
@@ -697,10 +757,282 @@
       </div>
       <div class="btns"><button class="btn" data-act="models">${t('Table of all models', 'Tabella di tutti i modelli')}</button></div>
       <div class="mine"></div>`;
-    const mine = settings.pointsPanel && (await isMe(u.handle));
+    const own = await isMe(u.handle);
+    const mine = settings.pointsPanel && own;
     body.querySelector('[data-act=models]').onclick = () => openModels(u, mine);
+    if (own && token === renderToken) {
+      body.querySelector('.btns').insertAdjacentHTML(
+        'beforeend',
+        `<button class="btn sec" data-act="inbox">💬 ${t('To reply', 'Da rispondere')}</button><button class="btn sec" data-act="trends">📈 ${t('Trends', 'Andamento')}</button>`
+      );
+      body.querySelector('[data-act=inbox]').onclick = () => openInbox(u);
+      body.querySelector('[data-act=trends]').onclick = () => openTrends(u);
+    }
     if (mine && token === renderToken) await mountPoints(body.querySelector('.mine'), token);
   }
+
+  // Tutti i modelli pubblicati da un utente.
+  async function loadDesigns(u) {
+    const rows = [];
+    for (let offset = 0; ; offset += 100) {
+      const j = await api(`/api/v1/design-service/published/${u.uid}/design?handle=${encodeURIComponent(u.handle)}&limit=100&offset=${offset}`);
+      rows.push(...(j.hits || []));
+      if (!j.hits?.length || rows.length >= j.total) break;
+    }
+    return rows;
+  }
+
+  // ---------- da rispondere: commenti e recensioni senza la tua risposta, su tutti i tuoi modelli ----------
+  async function openInbox(u) {
+    openModal(t('To reply', 'Da rispondere'), `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody"></div>`);
+    const sum = modal.querySelector('.sum');
+    const list = modal.querySelector('.mbody');
+    const myHandle = u.handle.toLowerCase();
+    const all = [];
+    try {
+      const designs = await loadDesigns(u);
+      let done = 0;
+      const queue = [...designs];
+      const worker = async () => {
+        while (queue.length && !ovl.hidden) {
+          const d = queue.shift();
+          const items = (await loadComments(d.id).catch(() => null)) || [];
+          for (const i of items)
+            if (!i.authorReplied && (i.user.handle || '').toLowerCase() !== myHandle) all.push({ ...i, design: { id: d.id, title: d.titleTranslated || d.title } });
+          sum.textContent = `${t('Checking your models…', 'Controllo i tuoi modelli…')} ${++done} / ${designs.length}`;
+        }
+      };
+      await Promise.all([worker(), worker(), worker(), worker()]); // 4 richieste alla volta
+    } catch (e) {
+      sum.innerHTML = `<span class="err">${t('Loading error', 'Errore nel caricamento')}: ${esc(e.message)}</span>`;
+      return;
+    }
+    if (ovl.hidden) return;
+    sum.insertAdjacentHTML(
+      'beforebegin',
+      `<div class="toolbar">
+        <select data-f="days"><option value="7">${t('Last 7 days', 'Ultimi 7 giorni')}</option><option value="30" selected>${t('Last 30 days', 'Ultimi 30 giorni')}</option><option value="90">${t('Last 90 days', 'Ultimi 90 giorni')}</option><option value="0">${t('Any time', 'Sempre')}</option></select>
+        <select data-f="kind"><option value="">${t('Reviews and comments', 'Recensioni e commenti')}</option><option value="rating">${t('Reviews only', 'Solo recensioni')}</option><option value="comment">${t('Comments only', 'Solo commenti')}</option></select>
+        <label><input type="checkbox" data-f="text" checked>${t('With text', 'Con testo')}</label>
+        <label><input type="checkbox" data-f="pics">${t('With photos', 'Con foto')}</label>
+      </div>`
+    );
+    const tb = modal.querySelector('.toolbar');
+    const f = (k) => tb.querySelector(`[data-f=${k}]`);
+    const draw = () => {
+      const days = +f('days').value;
+      const since = days ? Date.now() - days * 864e5 : 0;
+      const out = all
+        .filter(
+          (i) =>
+            new Date(i.time) >= since &&
+            (!f('kind').value || i.kind === f('kind').value) &&
+            (!f('text').checked || i.text.trim()) &&
+            (!f('pics').checked || i.images.length)
+        )
+        .sort((a, b) => new Date(b.time) - new Date(a.time));
+      sum.textContent = t(`${out.length} waiting for your reply · click one to open it on the page`, `${out.length} in attesa di risposta · clicca per aprirlo sulla pagina`);
+      list.innerHTML = out.slice(0, 500).map(itemHtml).join('') || `<p class="muted">${t('Nothing waiting for a reply in this period.', 'Niente in attesa di risposta in questo periodo.')}</p>`;
+    };
+    tb.addEventListener('input', draw);
+    bindGoTo(list);
+    draw();
+  }
+
+  // ---------- storico: una fotografia al giorno dei tuoi modelli, salvata in locale ----------
+  async function snapshotHistory() {
+    const m = await me();
+    if (!m?.handle) return null;
+    const key = `hist:${m.uid}`;
+    const h = (await lget(key)) || { days: {}, titles: {} };
+    const today = isoDay(new Date());
+    if (h.days[today]) return h;
+    const designs = await loadDesigns(m).catch(() => null);
+    if (!designs) return h;
+    const day = { dl: 0, pr: 0, m: {} };
+    for (const d of designs) {
+      day.dl += d.downloadCount || 0;
+      day.pr += d.printCount || 0;
+      day.m[d.id] = [d.downloadCount || 0, d.printCount || 0];
+      h.titles[d.id] = d.titleTranslated || d.title;
+    }
+    h.days[today] = day;
+    const cut = daysAgo(400);
+    for (const d in h.days) if (d < cut) delete h.days[d];
+    await lset(key, h);
+    return h;
+  }
+
+  const compact = (n) => new Intl.NumberFormat(LOC, { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+  const shortDay = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString(LOC, { day: 'numeric', month: 'short' });
+
+  // Grafico a colonne, una sola serie: [{ d: 'YYYY-MM-DD', v, tip }]. Il valore esatto è nel tooltip.
+  function barChart(series, cls) {
+    const W = 1000, H = 190, L = 46, R = 8, T = 12, B = 26;
+    const raw = Math.max(1, ...series.map((p) => p.v));
+    const step = 10 ** Math.floor(Math.log10(raw));
+    const top = Math.ceil(raw / step) * step;
+    const slot = (W - L - R) / series.length;
+    const bw = Math.max(2, Math.min(24, slot - 2));
+    const y = (v) => T + (H - T - B) * (1 - v / top);
+    const grid = [0, top / 2, top]
+      .map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${compact(v)}</text>`)
+      .join('');
+    const every = Math.max(1, Math.ceil(series.length / 6));
+    const bars = series
+      .map((p, i) => {
+        const x = L + i * slot + (slot - bw) / 2;
+        const h = Math.max(0, H - B - y(p.v));
+        const r = Math.min(4, h, bw / 2);
+        const path = h ? `M${x},${H - B}V${H - B - h + r}Q${x},${H - B - h} ${x + r},${H - B - h}H${x + bw - r}Q${x + bw},${H - B - h} ${x + bw},${H - B - h + r}V${H - B}Z` : '';
+        const label = i % every === 0 || i === series.length - 1 ? `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${shortDay(p.d)}</text>` : '';
+        return `<path class="bar-${i}" d="${path}"/>${label}<rect class="hit" data-i="${i}" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(p.tip)}"/>`;
+      })
+      .join('');
+    return `<div class="chart ${cls}"><svg viewBox="0 0 ${W} ${H}" role="img"><g class="grid">${grid}</g>${bars}</svg><div class="tip" hidden></div></div>`;
+  }
+  function bindCharts(el) {
+    el.querySelectorAll('.chart').forEach((c) => {
+      const tip = c.querySelector('.tip');
+      c.addEventListener('mousemove', (e) => {
+        const hit = e.target.closest('.hit');
+        c.querySelectorAll('path.on').forEach((p) => p.classList.remove('on'));
+        if (!hit) return (tip.hidden = true);
+        c.querySelector(`.bar-${hit.dataset.i}`)?.classList.add('on');
+        const box = c.getBoundingClientRect();
+        tip.textContent = hit.dataset.tip;
+        tip.style.left = `${e.clientX - box.left}px`;
+        tip.style.top = `${e.clientY - box.top - 12}px`;
+        tip.hidden = false;
+      });
+      c.addEventListener('mouseleave', () => {
+        tip.hidden = true;
+        c.querySelectorAll('path.on').forEach((p) => p.classList.remove('on'));
+      });
+    });
+  }
+
+  async function openTrends(u) {
+    openModal(t('Trends', 'Andamento'), `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody trends"></div>`);
+    const sum = modal.querySelector('.sum');
+    const box = modal.querySelector('.mbody');
+    let h, agg;
+    try {
+      [h, agg] = await Promise.all([snapshotHistory(), pointBills(u.uid).catch(() => null)]);
+    } catch (e) {
+      sum.innerHTML = `<span class="err">${t('Loading error', 'Errore nel caricamento')}: ${esc(e.message)}</span>`;
+      return;
+    }
+    if (ovl.hidden || !h) return;
+    const days = Object.keys(h.days).sort();
+    const latest = h.days[days[days.length - 1]];
+    // Fotografia più recente non successiva a n giorni fa (o la più vecchia disponibile).
+    const at = (n) => {
+      const lim = daysAgo(n);
+      const d = [...days].reverse().find((x) => x <= lim) || days[0];
+      return { d, s: h.days[d] };
+    };
+    let html = '';
+
+    // Download al giorno: differenza tra fotografie consecutive.
+    const dl = days.slice(1).map((d, i) => {
+      const v = Math.max(0, h.days[d].dl - h.days[days[i]].dl);
+      const gap = Math.round((new Date(d) - new Date(days[i])) / 864e5);
+      return { d, v, tip: `${shortDay(d)}: ${fmt(v)} download${gap > 1 ? ` (${t(`over ${gap} days`, `in ${gap} giorni`)})` : ''}` };
+    });
+    html += `<h4>${t('Downloads per day', 'Download al giorno')}</h4>`;
+    html +=
+      dl.length >= 1
+        ? barChart(dl.slice(-60), 'dl')
+        : `<p class="muted">${t(
+            'History starts today: MakerPulse saves a snapshot of your models once a day while you browse MakerWorld. Come back tomorrow to see the first bars.',
+            'Lo storico parte da oggi: MakerPulse salva una fotografia dei tuoi modelli una volta al giorno mentre navighi su MakerWorld. Torna domani per vedere le prime colonne.'
+          )}</p>`;
+
+    // Punti al giorno: dalle transazioni, disponibili subito.
+    if (agg) {
+      const pts = [];
+      for (let i = 59; i >= 0; i--) {
+        const d = daysAgo(i);
+        const v = Math.round(agg.byDay[d] || 0);
+        pts.push({ d, v, tip: `${shortDay(d)}: ${fmt(v)} ${t('points', 'punti')}` });
+      }
+      html += `<h4 class="gold">${t('Points per day (60 days)', 'Punti al giorno (60 giorni)')}</h4>${barChart(pts, 'pts')}`;
+    }
+
+    // Tabella per modello: ultimi 7 giorni contro i 7 precedenti.
+    const b7 = at(7), b14 = at(14);
+    const partial = b7.d === days[0];
+    const rows = Object.keys(latest.m).map((id) => {
+      const now = latest.m[id][0];
+      const d7 = now - (b7.s.m[id]?.[0] ?? now);
+      const p7 = (b7.s.m[id]?.[0] ?? 0) - (b14.s.m[id]?.[0] ?? b7.s.m[id]?.[0] ?? 0);
+      return { id, title: h.titles[id] || id, d7, p7, pts30: Math.round(sumSince(agg?.byDesign[id]?.d, 30)) };
+    });
+    rows.sort((a, b) => b.d7 - a.d7 || b.pts30 - a.pts30);
+    const trend = (r) => {
+      if (days.length < 2 || b14.d === b7.d) return '–';
+      if (!r.p7) return r.d7 ? '▲' : '–';
+      const pc = Math.round(((r.d7 - r.p7) / r.p7) * 100);
+      return `<span class="${pc >= 0 ? 'up' : 'down'}">${pc >= 0 ? '▲' : '▼'} ${Math.abs(pc)}%</span>`;
+    };
+    html += `<h4>${t('Your models', 'I tuoi modelli')}</h4>
+      <table><thead><tr><th>${t('Model', 'Modello')}</th><th class="n">${partial ? t(`Downloads since ${shortDay(b7.d)}`, `Download dal ${shortDay(b7.d)}`) : t('Downloads 7 days', 'Download 7 gg')}</th><th class="n">${t('vs previous 7 days', 'vs 7 gg prima')}</th><th class="n">${t('Points 30 days', 'Punti 30 gg')}</th></tr></thead><tbody>
+      ${rows
+        .slice(0, 100)
+        .map((r) => `<tr><td><a href="${localePrefix()}/models/${r.id}" target="_blank" rel="noopener">${esc(r.title)}</a></td><td class="n">${days.length > 1 ? fmt(r.d7) : '–'}</td><td class="n">${trend(r)}</td><td class="n">${fmt(r.pts30)}</td></tr>`)
+        .join('')}</tbody></table>`;
+    sum.textContent = t(
+      `${days.length} daily snapshots saved since ${shortDay(days[0])} · stored only in this browser`,
+      `${days.length} fotografie giornaliere salvate dal ${shortDay(days[0])} · salvate solo in questo browser`
+    );
+    box.innerHTML = html;
+    bindCharts(box);
+  }
+
+  // ---------- statistiche sulle schede modello (home, ricerca, profili) ----------
+  // I dati arrivano da hook.js, che legge le risposte delle liste nel contesto della pagina.
+  const cardData = new Map();
+  let cardsQueued = false;
+  const cardCss = document.createElement('style');
+  cardCss.textContent = `.makerpulse-card { position: absolute; left: 8px; bottom: 8px; z-index: 3; display: flex; gap: 8px; align-items: center;
+    padding: 3px 9px; border-radius: 999px; background: rgba(20,24,28,.78); backdrop-filter: blur(6px); color: #fff; pointer-events: none;
+    font: 600 11px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; box-shadow: 0 2px 8px rgba(0,0,0,.25); }`;
+  function scheduleCards() {
+    if (cardsQueued || !settings.cardStats) return;
+    cardsQueued = true;
+    requestAnimationFrame(() => {
+      cardsQueued = false;
+      decorateCards();
+    });
+  }
+  function decorateCards() {
+    if (!cardCss.isConnected) document.head.appendChild(cardCss);
+    for (const a of document.querySelectorAll('a[href*="/models/"]:not([data-makerpulse-card])')) {
+      const img = a.querySelector('img');
+      const d = img && cardData.get((a.getAttribute('href').match(/\/models\/(\d+)/) || [])[1]);
+      if (!d) continue;
+      a.dataset.makerpulseCard = '1';
+      const holder = img.parentElement;
+      if (getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
+      const b = document.createElement('div');
+      b.className = 'makerpulse-card';
+      b.textContent = [
+        `🖨 ${compact(d.pr)}`,
+        d.bo != null ? `🚀 ${compact(d.bo)}` : '',
+        d.dl ? `${Math.round((d.pr / d.dl) * 100)}% ${t('printed', 'stampati')}` : '',
+        d.hot ? `🔥 ${compact(d.hot)}` : '',
+      ]
+        .filter(Boolean)
+        .join('  ');
+      holder.appendChild(b);
+    }
+  }
+  window.addEventListener('message', (e) => {
+    if (e.source !== window || e.data?.makerpulse !== 'designs') return;
+    for (const d of e.data.designs) cardData.set(String(d.id), d);
+    scheduleCards();
+  });
 
   // ---------- tabella modelli ----------
   const COLS = [
@@ -719,15 +1051,10 @@
   async function openModels(u, mine) {
     openModal(t(`Models by ${u.name}`, `Modelli di ${u.name}`), `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody"></div>`);
     const sum = modal.querySelector('.sum');
-    const rows = [];
+    let rows;
     try {
-      for (let offset = 0; ; offset += 100) {
-        const j = await api(`/api/v1/design-service/published/${u.uid}/design?handle=${encodeURIComponent(u.handle)}&limit=100&offset=${offset}`);
-        if (ovl.hidden) return;
-        rows.push(...(j.hits || []));
-        sum.textContent = `${t('Loading…', 'Caricamento…')} ${rows.length} / ${j.total ?? '?'}`;
-        if (!j.hits?.length || rows.length >= j.total) break;
-      }
+      rows = await loadDesigns(u);
+      if (ovl.hidden) return;
     } catch (e) {
       sum.innerHTML = `<span class="err">${t('Loading error', 'Errore nel caricamento')}: ${esc(e.message)}</span>`;
       return;
@@ -848,6 +1175,11 @@
       if (area !== 'sync') return;
       for (const k in ch) settings[k] = ch[k].newValue;
       if ('quickReplies' in ch && !settings.quickReplies) hideQr();
+      if ('cardStats' in ch) {
+        document.querySelectorAll('.makerpulse-card').forEach((b) => b.remove());
+        document.querySelectorAll('[data-makerpulse-card]').forEach((a) => delete a.dataset.makerpulseCard);
+        scheduleCards();
+      }
       if ('modelPanel' in ch || 'profilePanel' in ch || 'pointsPanel' in ch) {
         lastKey = '';
         render();
@@ -855,6 +1187,9 @@
     });
     render();
     scrollToPendingComment();
+    if (settings.pointsPanel) snapshotHistory().catch(() => {});
+    new MutationObserver(scheduleCards).observe(document.documentElement, { childList: true, subtree: true });
+    window.postMessage({ makerpulse: 'replay' }, location.origin);
     setInterval(render, 500);
     window.addEventListener('popstate', render);
   }

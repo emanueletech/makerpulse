@@ -1,4 +1,4 @@
-const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, collapsed: false };
+const DEFAULTS = { modelPanel: true, profilePanel: true, pointsPanel: true, quickReplies: true, cardStats: true, collapsed: false };
 const IT = (navigator.language || '').toLowerCase().startsWith('it');
 const TEXT = {
   tagline: ['Stats & tools for MakerWorld creators', 'Statistiche e strumenti per i creator di MakerWorld'],
@@ -16,6 +16,7 @@ const TEXT = {
   profilePanel: ['Panel on profile pages', 'Pannello sulle pagine profilo'],
   pointsPanel: ['Points, gift cards and redemption (logged-in account)', 'Punti, gift card e riscatto (account loggato)'],
   collapsed: ['Panel collapsed when opened', "Pannello compresso all'apertura"],
+  cardStats: ['Prints and boosts on model cards', 'Stampe e boost sulle schede modello'],
   quickReplies: ['Quick replies in comment boxes', 'Risposte rapide nei commenti'],
   repliesTitle: ['Quick replies (one per line)', 'Risposte rapide (una per riga)'],
   repliesHint: ['Empty the box to restore the defaults. The + button next to a comment box saves the text you typed.', 'Svuota il riquadro per ripristinare quelle predefinite. Il tasto + accanto al commento salva il testo che hai scritto.'],
