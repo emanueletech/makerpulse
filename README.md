@@ -6,7 +6,7 @@
 <p align="center">
   <a href="https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip"><img src="https://img.shields.io/badge/Download-ZIP-00AE42?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
   <a href="https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp"><img src="https://img.shields.io/chrome-web-store/v/moiomhlofgpbiifcjblcaefcebnccblp?style=for-the-badge&logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=4285F4" alt="Chrome Web Store"></a>
-  <img src="https://img.shields.io/badge/Edge_Add--ons-in_review-lightgrey?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons: in review">
+  <a href="https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec"><img src="https://img.shields.io/badge/Edge_Add--ons-install-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons"></a>
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@
 [Install MakerPulse from the Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) – works in Chrome, Brave and Vivaldi, and updates automatically.
 
 ### Edge Add-ons
-Submitted, currently in review. Until then, Edge can install it from the Chrome Web Store (allow extensions from other stores) or use the manual install below.
+[Install MakerPulse from Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) – updates automatically.
 
 ### Manual install (Chrome, Edge, Brave, Vivaldi)
 1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
@@ -75,6 +75,6 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con export CSV e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
-**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) (si aggiorna da sola).
+**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) o da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) (si aggiorna da sola).
 
 **Installazione manuale:** [scarica lo zip](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip), decomprimilo, apri `chrome://extensions`, attiva la **Modalità sviluppatore** e scegli **Carica estensione non pacchettizzata**.
