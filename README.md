@@ -21,6 +21,7 @@
   <img src="https://img.shields.io/badge/Edge-supported-0078D7?logo=microsoftedge&logoColor=white" alt="Edge">
   <img src="https://img.shields.io/badge/Brave-supported-FB542B?logo=brave&logoColor=white" alt="Brave">
   <img src="https://img.shields.io/badge/Vivaldi-supported-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi">
+  <img src="https://img.shields.io/badge/Firefox-supported-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox">
   <img src="https://img.shields.io/badge/language-EN_%7C_IT-555" alt="English and Italian">
 </p>
 
@@ -53,6 +54,9 @@
 ### Edge Add-ons
 [Install MakerPulse from Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) – updates automatically.
 
+### Firefox Add-ons
+Coming soon: MakerPulse is in review on Firefox Add-ons (Firefox 140 or later).
+
 ### Manual install (Chrome, Edge, Brave, Vivaldi)
 1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
 2. Open `chrome://extensions` (or `edge://extensions`) and enable **Developer mode**.
@@ -60,6 +64,13 @@
 4. Open any model or profile page on makerworld.com.
 
 Manual installs don't update automatically: download the new release and replace the folder.
+
+### Try it in Firefox without installing
+1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
+2. Open `about:debugging#/runtime/this-firefox` and click **Load Temporary Add-on…**.
+3. Select `manifest.json` inside the unzipped folder.
+
+Firefox removes temporary add-ons when it restarts.
 
 ## Privacy
 
@@ -75,6 +86,6 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con export CSV e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
-**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) o da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) (si aggiorna da sola).
+**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) o da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) (si aggiorna da sola). Su Firefox Add-ons è in revisione (serve Firefox 140 o successivo).
 
 **Installazione manuale:** [scarica lo zip](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip), decomprimilo, apri `chrome://extensions`, attiva la **Modalità sviluppatore** e scegli **Carica estensione non pacchettizzata**.
