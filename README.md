@@ -7,6 +7,7 @@
   <a href="https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip"><img src="https://img.shields.io/badge/Download-ZIP-00AE42?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
   <a href="https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp"><img src="https://img.shields.io/chrome-web-store/v/moiomhlofgpbiifcjblcaefcebnccblp?style=for-the-badge&logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=4285F4" alt="Chrome Web Store"></a>
   <a href="https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec"><img src="https://img.shields.io/badge/Edge_Add--ons-install-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons"></a>
+  <a href="https://addons.mozilla.org/addon/makerpulse-makerworld/"><img src="https://img.shields.io/amo/v/makerpulse-makerworld?style=for-the-badge&logo=firefoxbrowser&logoColor=white&label=Firefox%20Add-ons&color=FF7139" alt="Firefox Add-ons"></a>
 </p>
 
 <p align="center">
@@ -55,7 +56,7 @@
 [Install MakerPulse from Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) – updates automatically.
 
 ### Firefox Add-ons
-Coming soon: MakerPulse is in review on Firefox Add-ons (Firefox 140 or later).
+[Install MakerPulse from Firefox Add-ons](https://addons.mozilla.org/addon/makerpulse-makerworld/) – Firefox 140 or later, updates automatically.
 
 ### Manual install (Chrome, Edge, Brave, Vivaldi)
 1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
@@ -64,13 +65,6 @@ Coming soon: MakerPulse is in review on Firefox Add-ons (Firefox 140 or later).
 4. Open any model or profile page on makerworld.com.
 
 Manual installs don't update automatically: download the new release and replace the folder.
-
-### Try it in Firefox without installing
-1. [Download the ZIP](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip) from the latest release and unzip it.
-2. Open `about:debugging#/runtime/this-firefox` and click **Load Temporary Add-on…**.
-3. Select `manifest.json` inside the unzipped folder.
-
-Firefox removes temporary add-ons when it restarts.
 
 ## Privacy
 
@@ -86,6 +80,6 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con export CSV e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
-**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) o da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) (si aggiorna da sola). Su Firefox Add-ons è in revisione (serve Firefox 140 o successivo).
+**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) , da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) o da [Firefox Add-ons](https://addons.mozilla.org/addon/makerpulse-makerworld/) (Firefox 140 o successivo): si aggiorna da sola.
 
 **Installazione manuale:** [scarica lo zip](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip), decomprimilo, apri `chrome://extensions`, attiva la **Modalità sviluppatore** e scegli **Carica estensione non pacchettizzata**.
