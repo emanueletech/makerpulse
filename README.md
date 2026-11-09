@@ -80,6 +80,6 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con export CSV e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
-**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp) , da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) o da [Firefox Add-ons](https://addons.mozilla.org/addon/makerpulse-makerworld/) (Firefox 140 o successivo): si aggiorna da sola.
+**Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp), da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) o da [Firefox Add-ons](https://addons.mozilla.org/addon/makerpulse-makerworld/) (Firefox 140 o successivo): si aggiorna da sola.
 
 **Installazione manuale:** [scarica lo zip](https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip), decomprimilo, apri `chrome://extensions`, attiva la **Modalità sviluppatore** e scegli **Carica estensione non pacchettizzata**.
