@@ -405,10 +405,17 @@
     .qr .prev { flex-basis: 100%; order: -1; padding: 6px 10px; border-radius: 10px; background: var(--plate); color: var(--slate); font-size: 12px; line-height: 1.45; white-space: normal; }
     .qr .prev.on { color: var(--ink); background: var(--green-soft); }
     .qr button.lang { background: var(--graphite); border-color: var(--graphite); color: #fff; font-weight: 600; }
+    /* invito a valutare l'estensione */
+    .rate { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: var(--gold-soft); border-bottom: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; }
+    .rate div { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rate .btn { padding: 6px 12px; font-size: 12px; text-decoration: none; }
+    .panel.collapsed .rate { display: none; }
     .qr button.save { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; box-shadow: 0 2px 0 var(--green-deep); }
   </style>
   <div class="panel" hidden>
     <div class="head"><svg class="logo" viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="22" fill="#14181c"/><rect x="20" y="62" width="56" height="7" rx="3.5" fill="#00AE42" opacity=".55"/><rect x="24" y="73" width="48" height="7" rx="3.5" fill="#00AE42" opacity=".3"/><polyline points="14,50 30,50 37,34 47,58 56,22 63,50 82,50" fill="none" stroke="#00AE42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>MakerPulse</b><button class="tog" title="${t('Collapse/expand', 'Comprimi/espandi')}">▾</button><button class="x" title="${t('Close', 'Chiudi')}">×</button></div>
+    <div class="rate" hidden><span>⭐ ${t('Is MakerPulse useful? A rating on the store helps other creators find it.', 'Ti è utile MakerPulse? Una valutazione sullo store aiuta altri creator a trovarla.')}</span>
+      <div><a class="btn" data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener">${t('Rate it', 'Valuta')}</a><button class="btn sec" data-rate="later">${t('Later', 'Più tardi')}</button><button class="btn sec" data-rate="never">${t('No thanks', 'No grazie')}</button></div></div>
     <div class="body"></div>
   </div>
   <div class="ovl" hidden><div class="modal"></div></div>
@@ -441,6 +448,27 @@
     ovl.hidden = true;
     modal.innerHTML = '';
   }
+
+  // ---------- invito a valutare: una volta, dopo una settimana e 5 aperture del pannello ----------
+  // "Più tardi" lo ripropone dopo 30 giorni, "No grazie" e "Valuta" lo chiudono per sempre.
+  const rate = root.querySelector('.rate');
+  async function maybeAskRating() {
+    if (!rate.hidden || !globalThis.MAKERPULSE_STORE_URL) return;
+    const now = Date.now();
+    let since = await lget('installedAt');
+    if (!since) await lset('installedAt', (since = now));
+    const opens = ((await lget('panelOpens')) || 0) + 1;
+    await lset('panelOpens', opens);
+    const st = await lget('rateAsk'); // 'done' | 'never' | data da cui riproporlo
+    if (st === 'done' || st === 'never' || (typeof st === 'number' && now < st)) return;
+    if (now - since >= 7 * 864e5 && opens >= 5) rate.hidden = false;
+  }
+  rate.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rate]');
+    if (!b) return;
+    lset('rateAsk', b.dataset.rate === 'later' ? Date.now() + 30 * 864e5 : b.dataset.rate);
+    rate.hidden = true;
+  });
 
   // ---------- risposte rapide nei commenti ----------
   // Testi in inglese e italiano: si usa la lingua di chi ha scritto il commento a cui rispondi (inglese per le altre lingue).
@@ -1269,6 +1297,7 @@
     if (!host.isConnected) document.documentElement.appendChild(host);
     panel.hidden = false;
     setCollapsed(settings.collapsed);
+    maybeAskRating().catch(() => {});
     body.innerHTML = `<span class="muted">${t('Loading…', 'Caricamento…')}</span>`;
     try {
       if (r.type === 'model') await renderModel(r.id, token);

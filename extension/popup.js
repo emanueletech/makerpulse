@@ -24,6 +24,7 @@ const TEXT = {
     "Le risposte partono in inglese. MakerPulse passa all'italiano solo se il commento a cui rispondi è in italiano. Puoi cambiarla anche dalla barra.",
   ],
   repliesHint: ['Empty the box to restore the defaults. The + button next to a comment box saves the text you typed.', 'Svuota il riquadro per ripristinare quelle predefinite. Il tasto + accanto al commento salva il testo che hai scritto.'],
+  rate: ['Rate MakerPulse on the store', 'Valuta MakerPulse sullo store'],
   note: ['Changes apply immediately to open tabs.', 'Le modifiche si applicano subito alle schede aperte.'],
 };
 document.documentElement.lang = IT ? 'it' : 'en';
@@ -31,6 +32,8 @@ document.documentElement.lang = IT ? 'it' : 'en';
 document.body.classList.toggle('welcome', new URLSearchParams(location.search).has('welcome'));
 document.querySelector('.version').textContent = `MakerPulse ${IT ? 'versione' : 'version'} ${chrome.runtime.getManifest().version}`;
 for (const el of document.querySelectorAll('[data-t]')) el.textContent = TEXT[el.dataset.t][IT ? 1 : 0];
+for (const el of document.querySelectorAll('[data-title]')) el.title = TEXT[el.dataset.title][IT ? 1 : 0];
+document.querySelector('a.rate').href = MAKERPULSE_STORE_URL;
 chrome.storage.sync.get(DEFAULTS).then((s) => {
   for (const k in DEFAULTS) {
     const el = document.getElementById(k);
