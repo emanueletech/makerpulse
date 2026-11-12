@@ -5,9 +5,9 @@
 
 <p align="center">
   <a href="https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip"><img src="https://img.shields.io/badge/Download-ZIP-00AE42?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
-  <a href="https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp"><img src="https://img.shields.io/chrome-web-store/v/moiomhlofgpbiifcjblcaefcebnccblp?style=for-the-badge&logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=4285F4&cacheSeconds=3600" alt="Chrome Web Store"></a>
+  <a href="https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp"><img src="https://img.shields.io/badge/Chrome_Web_Store-install-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store"></a>
   <a href="https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec"><img src="https://img.shields.io/badge/Edge_Add--ons-install-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons"></a>
-  <a href="https://addons.mozilla.org/addon/makerpulse-makerworld/"><img src="https://img.shields.io/amo/v/makerpulse-makerworld?style=for-the-badge&logo=firefoxbrowser&logoColor=white&label=Firefox%20Add-ons&color=FF7139&cacheSeconds=3600" alt="Firefox Add-ons"></a>
+  <a href="https://addons.mozilla.org/addon/makerpulse-makerworld/"><img src="https://img.shields.io/badge/Firefox_Add--ons-install-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white" alt="Firefox Add-ons"></a>
 </p>
 
 <p align="center">
