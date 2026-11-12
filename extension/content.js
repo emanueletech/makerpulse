@@ -494,7 +494,8 @@
     .stat .v.down { color: #c2410c; }
     .empty { display: flex; gap: 12px; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; color: var(--slate); font-size: 12.5px; line-height: 1.45; }
     .empty svg { width: 28px; height: 28px; flex: none; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .mini { display: inline-block; width: 64px; height: 6px; margin-right: 10px; vertical-align: middle; border-radius: 3px; background: var(--plate); overflow: hidden; }
+    .mini { display: inline-block; width: 80px; height: 6px; margin-right: 10px; vertical-align: middle; border-radius: 3px; background: var(--line); overflow: hidden; }
+    .mini + .nv { display: inline-block; min-width: 6ch; font-variant-numeric: tabular-nums; text-align: right; } /* numero a larghezza fissa: tutte le barre partono dallo stesso punto */
     .mini i { display: block; height: 100%; border-radius: 3px; background: var(--bar-pts); animation: mp-grow .8s cubic-bezier(.2,.7,.2,1) backwards; }
     .mbody td a { color: var(--ink); text-decoration: none; font-weight: 500; }
     .mbody td a:hover { color: var(--green-deep); text-decoration: underline; }
@@ -1497,7 +1498,7 @@
         .slice(0, 100)
         .map(
           (r) =>
-            `<tr><td><a href="${localePrefix()}/models/${r.id}" target="_blank" rel="noopener">${esc(r.title)}</a></td>${hasDl ? `<td class="n">${fmt(r.d7)}</td><td class="n">${trend(r)}</td>` : ''}<td class="n"><span class="mini"><i style="width:${(r.pts30 / maxPts) * 100}%"></i></span>${fmt(r.pts30)}</td></tr>`
+            `<tr><td><a href="${localePrefix()}/models/${r.id}" target="_blank" rel="noopener">${esc(r.title)}</a></td>${hasDl ? `<td class="n">${fmt(r.d7)}</td><td class="n">${trend(r)}</td>` : ''}<td class="n"><span class="mini"><i style="width:${(r.pts30 / maxPts) * 100}%"></i></span><span class="nv">${fmt(r.pts30)}</span></td></tr>`
         )
         .join('')}</tbody></table>`;
     sum.textContent =
