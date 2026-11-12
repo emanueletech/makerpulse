@@ -263,9 +263,9 @@
   }
 
   async function mountPoints(el, token) {
-    el.innerHTML = `<p class="muted">${t('Calculating points…', 'Calcolo punti…')}</p>`;
+    el.innerHTML = loading(t('Calculating points…', 'Calcolo punti…'));
     const html = await pointsHtml((done, need) => {
-      if (token === renderToken) el.innerHTML = `<p class="muted">${t('Reading point transactions…', 'Lettura transazioni punti…')} ${fmt(done)} / ${fmt(need)}</p>`;
+      if (token === renderToken) showLoading(el, t('Reading point transactions…', 'Lettura transazioni punti…'), done, need);
     });
     if (token !== renderToken) return;
     el.innerHTML = html;
@@ -298,8 +298,34 @@
     .panel { position: fixed; right: 18px; bottom: 18px; z-index: 2147483000; width: 400px; max-height: 76vh; display: flex; flex-direction: column;
       background: var(--surface); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-lg); font-size: 13px; overflow: hidden; }
     .panel.collapsed .body { display: none; }
+    /* caricamento: la linea del logo che pulsa, con barra di avanzamento quando si conosce il totale */
+    .ld { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; width: 100%; color: var(--slate); font-size: 12px; padding: 4px 0; }
+    .ld svg { width: 30px; height: 30px; flex: none; }
+    .ld polyline { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; animation: mp-pulse 1.5s ease-in-out infinite; }
+    .ld b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ld .bar { flex-basis: 100%; margin: 0; }
+    .ld .bar i { transition: width .3s ease; }
+    @keyframes mp-pulse { 0% { stroke-dashoffset: 150; } 50% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -150; } }
+    /* effetti d'avvio: schede che salgono una dopo l'altra, barre che si riempiono, pannello e finestre che si aprono */
+    .stat { animation: mp-in .5s cubic-bezier(.2,.7,.2,1) backwards; }
+    ${Array.from({ length: 12 }, (_, i) => `.stat:nth-child(${i + 1}) { animation-delay: ${i * 40}ms; }`).join(' ')}
+    .bar i { animation: mp-grow 1s cubic-bezier(.2,.7,.2,1) backwards; }
+    .ld .bar i { animation: none; }
+    .panel, .modal { animation: mp-pop .3s cubic-bezier(.2,.7,.2,1) backwards; }
+    @keyframes mp-in { from { opacity: 0; transform: translateY(8px); } }
+    @keyframes mp-grow { from { width: 0; } }
+    @keyframes mp-pop { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+    @media (prefers-reduced-motion: reduce) { .ld polyline { animation: none; stroke-dasharray: none; } .stat, .bar i, .panel, .modal { animation: none; } }
+    /* da chiuso: solo il logo, piccolo e semitrasparente */
+    .panel.collapsed { width: auto; border-radius: 999px; opacity: .92; transition: opacity .15s, transform .15s;
+      box-shadow: 0 0 0 2px rgba(0,174,66,.55), var(--shadow-lg); }
+    .panel.collapsed:hover { opacity: 1; transform: scale(1.06); }
+    .panel.collapsed .head { padding: 9px; gap: 0; border-bottom: 0; }
+    .panel.collapsed .head .logo { width: 38px; height: 38px; }
+    .panel.collapsed .head b, .panel.collapsed .head button { display: none; }
     .head { display: flex; align-items: center; gap: 10px; padding: 11px 12px 11px 14px; color: #fff; cursor: pointer; user-select: none;
       background: var(--layers), linear-gradient(180deg, var(--graphite-2), var(--graphite)); border-bottom: 2px solid var(--green); }
+    .panel .head { cursor: move; touch-action: none; }
     .head .logo { width: 24px; height: 24px; flex: none; }
     .head b { flex: 1; font-size: 14px; font-weight: 700; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .head button { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,.08); border: 0; color: #fff; font-size: 15px; cursor: pointer; line-height: 1; }
@@ -317,6 +343,9 @@
     h4.gold::before { background: var(--gold); }
     h4 select { margin-left: auto; font-size: 12px; font-weight: 500; }
     select, input[type=search] { font-size: 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; box-shadow: var(--shadow-sm); }
+    select { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a96a2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 11px center; background-size: 11px 7px; }
     select:focus, input:focus { outline: 2px solid var(--green); outline-offset: 1px; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
     th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -324,7 +353,13 @@
     th { background: var(--plate); color: var(--slate); font-weight: 600; white-space: nowrap; }
     td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     tbody tr:hover td { background: var(--green-soft); }
-    .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    /* azioni del pannello: riquadri uguali con icona sopra l'etichetta */
+    .btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+    .btns .btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 66px; padding: 10px 8px;
+      border-radius: 12px; font-size: 12px; line-height: 1.25; text-align: center; }
+    .btns .btn svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .btns .btn.sec svg { color: var(--green); }
+    .btns .btn.sec:hover { border-color: var(--green); background: var(--green-soft); }
     .btn { background: var(--green); color: #fff; border: 0; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 650; cursor: pointer;
       box-shadow: 0 2px 0 var(--green-deep), 0 6px 14px -4px rgba(0,174,66,.45); transition: transform .08s, box-shadow .08s; }
     .btn:hover { transform: translateY(-1px); }
@@ -345,6 +380,7 @@
     /* modale */
     .ovl { position: fixed; inset: 0; z-index: 2147483001; background: rgba(15,20,25,.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 24px; }
     .modal { background: var(--surface); color: var(--ink); border-radius: 18px; width: min(1120px, 100%); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; font-size: 13px; box-shadow: var(--shadow-lg); }
+    .modal.narrow { width: min(860px, 100%); }
     .modal .head { cursor: default; padding: 14px 16px; }
     .modal .head b { font-size: 15px; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 16px; background: var(--plate); border-bottom: 1px solid var(--line); }
@@ -352,9 +388,26 @@
     .toolbar label:has(input:checked) { background: var(--green-soft); border-color: var(--green); color: var(--green-deep); }
     .toolbar input[type=checkbox] { accent-color: var(--green); margin: 0; }
     .toolbar input[type=search] { min-width: 200px; }
+    .rp { margin-top: 10px; cursor: default; }
+    .rp .btn { padding: 7px 14px; font-size: 12px; border-radius: 999px; }
+    /* pulsante Rispondi: pillola verde in alto a destra della scheda */
+    .rp:has(> [data-rp=open]) { position: absolute; top: 12px; right: 14px; margin: 0; }
+    .rp [data-rp=open] { display: inline-flex; align-items: center; gap: 6px; background: var(--green-soft); color: var(--green-deep); border: 1px solid rgba(0,174,66,.35);
+      box-shadow: none; font-weight: 650; transition: background .12s, color .12s, transform .12s; }
+    .rp [data-rp=open]:hover { background: var(--green); color: #fff; border-color: var(--green); }
+    .rp [data-rp=open] svg { width: 13px; height: 13px; }
+    .rp [data-rp=send] { box-shadow: 0 2px 0 var(--green-deep); }
+    .rp .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .rp textarea { display: block; width: 100%; box-sizing: border-box; min-height: 70px; resize: vertical; font: inherit; font-size: 13px; color: var(--ink); background: var(--surface);
+      border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+    .rp textarea:focus { outline: none; border-color: var(--green); }
+    .rp .rpa { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    .rp .rpa .err { margin-right: auto; }
     .mbody { overflow: auto; padding: 4px 16px 16px; background: var(--plate); }
-    .item { display: flex; gap: 12px; padding: 14px; margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-sm); }
-    .item img.av { width: 40px; height: 40px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
+    .item { position: relative; display: flex; gap: 12px; padding: 12px 14px; margin-top: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-sm); }
+    .item > div { flex: 1; min-width: 0; }
+    .item:has(> div > .rp > [data-rp=open]) > div { padding-right: 104px; }
+    .item img.av { width: 36px; height: 36px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
     .item[data-id] { cursor: pointer; transition: border-color .12s, transform .12s; }
     .item[data-id]:hover { border-color: var(--green); transform: translateY(-1px); }
     .item .on { font-size: 12px; color: var(--green-deep); margin-bottom: 3px; }
@@ -400,11 +453,11 @@
     /* risposte rapide */
     .qr { position: fixed; z-index: 2147483002; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: var(--surface);
       border-radius: 14px; box-shadow: var(--shadow-lg); font-size: 12px; border-top: 3px solid var(--green); }
-    .qr button { border: 1px solid var(--line); background: var(--plate); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: transform .08s; }
-    .qr button:hover { border-color: var(--green); background: var(--green-soft); transform: translateY(-1px); }
+    .qr button, .rp .chips button { border: 1px solid var(--line); background: var(--plate); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: transform .08s; }
+    .qr button:hover, .rp .chips button:hover { border-color: var(--green); background: var(--green-soft); transform: translateY(-1px); }
     .qr .prev { flex-basis: 100%; order: -1; padding: 6px 10px; border-radius: 10px; background: var(--plate); color: var(--slate); font-size: 12px; line-height: 1.45; white-space: normal; }
     .qr .prev.on { color: var(--ink); background: var(--green-soft); }
-    .qr button.lang { background: var(--graphite); border-color: var(--graphite); color: #fff; font-weight: 600; }
+    .qr button.lang, .rp .chips button.lang { background: var(--graphite); border-color: var(--graphite); color: #fff; font-weight: 600; }
     /* invito a valutare l'estensione */
     .rate { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: var(--gold-soft); border-bottom: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; }
     .rate div { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -431,15 +484,69 @@
     panel.classList.toggle('collapsed', c);
     root.querySelector('.tog').textContent = c ? '▸' : '▾';
     save({ collapsed: c });
+    placePanel();
   }
-  root.querySelector('.head').addEventListener('click', (e) => {
+  const head = root.querySelector('.head');
+  let dragged = false;
+  head.addEventListener('click', (e) => {
+    if (dragged) return void (dragged = false); // fine di un trascinamento, non un clic
     if (!e.target.closest('.x')) setCollapsed(!settings.collapsed);
+  });
+
+  // ---------- pannello spostabile: si trascina dalla barra del titolo, la posizione resta salvata ----------
+  // Distanza dal bordo destro e da quello in basso, così da compresso resta ancorato in basso come prima.
+  // La posizione salvata non si tocca: si limita solo quella mostrata, così il pannello resta sempre nella finestra
+  // anche quando cresce (caricamento, apertura da compresso) e da compresso torna dove l'avevi messo.
+  let pos = { r: 18, b: 18 };
+  function placePanel() {
+    const cur = {
+      r: Math.min(Math.max(0, pos.r), Math.max(0, innerWidth - panel.offsetWidth)),
+      b: Math.min(Math.max(0, pos.b), Math.max(0, innerHeight - panel.offsetHeight)),
+    };
+    panel.style.right = `${cur.r}px`;
+    panel.style.bottom = `${cur.b}px`;
+    return cur;
+  }
+  new ResizeObserver(() => placePanel()).observe(panel);
+  lget('panelPos').then((p) => {
+    if (p && Number.isFinite(p.r) && Number.isFinite(p.b)) pos = p;
+    placePanel();
+  });
+  window.addEventListener('resize', placePanel);
+  head.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    const cur = placePanel();
+    const start = { x: e.clientX, y: e.clientY, r: cur.r, b: cur.b };
+    let moving = false;
+    const move = (ev) => {
+      const dx = ev.clientX - start.x;
+      const dy = ev.clientY - start.y;
+      if (!moving && Math.hypot(dx, dy) < 5) return;
+      moving = true;
+      pos = { r: start.r - dx, b: start.b - dy };
+      placePanel();
+    };
+    const up = () => {
+      head.removeEventListener('pointermove', move);
+      head.removeEventListener('pointerup', up);
+      head.removeEventListener('pointercancel', up);
+      if (moving) {
+        dragged = true;
+        setTimeout(() => (dragged = false), 0); // se il clic non arriva (rilascio fuori dalla barra) non resta bloccato
+        lset('panelPos', (pos = placePanel()));
+      }
+    };
+    head.setPointerCapture(e.pointerId);
+    head.addEventListener('pointermove', move);
+    head.addEventListener('pointerup', up);
+    head.addEventListener('pointercancel', up);
   });
   root.querySelector('.x').addEventListener('click', () => (panel.hidden = true));
   ovl.addEventListener('click', (e) => e.target === ovl && closeModal());
   document.addEventListener('keydown', (e) => e.key === 'Escape' && !ovl.hidden && closeModal());
 
-  function openModal(title, html) {
+  function openModal(title, html, narrow) {
+    modal.classList.toggle('narrow', !!narrow);
     modal.innerHTML = `<div class="head">${root.querySelector('.head .logo').outerHTML}<b>${esc(title)}</b><button class="mx" title="${t('Close', 'Chiudi')}">×</button></div>${html}`;
     modal.querySelector('.mx').onclick = closeModal;
     ovl.hidden = false;
@@ -615,6 +722,63 @@
   window.addEventListener('scroll', placeQr, true);
   window.addEventListener('resize', placeQr);
 
+  // Indicatore di caricamento; con done/total mostra anche la barra di avanzamento.
+  const loading = (label, done, total) =>
+    `<div class="ld"><svg viewBox="0 0 96 96" aria-hidden="true"><polyline points="14,50 30,50 37,34 47,58 56,22 63,50 82,50"/></svg><span>${esc(label)}</span>` +
+    (total ? `<b>${fmt(done)} / ${fmt(total)}</b><div class="bar"><i style="width:${Math.min(100, (done / total) * 100)}%"></i></div>` : '') +
+    '</div>';
+  // Aggiorna l'avanzamento senza ricreare l'indicatore, così la linea non riparte e la barra scorre.
+  function showLoading(el, label, done, total) {
+    const ld = el.querySelector(':scope > .ld');
+    if (!ld?.querySelector('.bar')) return void (el.innerHTML = loading(label, done, total));
+    ld.querySelector('span').textContent = label;
+    ld.querySelector('b').textContent = `${fmt(done)} / ${fmt(total)}`;
+    ld.querySelector('.bar i').style.width = `${Math.min(100, (done / total) * 100)}%`;
+  }
+  // Numeri che contano da 0 al valore quando una scheda compare (solo valori numerici semplici, es. 65.280 o 12,5%).
+  const NUM = new Intl.NumberFormat(LOC).formatToParts(1234.5);
+  const GROUP = NUM.find((x) => x.type === 'group')?.value || ',';
+  const DECIMAL = NUM.find((x) => x.type === 'decimal')?.value || '.';
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  function countUp(el) {
+    const orig = el.textContent;
+    const m = orig.match(/^(\D*?)(\d[\d.,]*)(\D*)$/);
+    if (!m || still.matches) return;
+    const [, pre, num, post] = m;
+    const di = num.lastIndexOf(DECIMAL);
+    const decimals = di >= 0 ? num.length - di - 1 : 0;
+    const value = parseFloat(num.split(GROUP).join('').replace(DECIMAL, '.'));
+    if (!(value > 0)) return;
+    const t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / 1100);
+      el.textContent = k < 1 ? pre + dec(value * (1 - (1 - k) ** 3), decimals) + post : orig;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  const countIn = (box) =>
+    new MutationObserver((ms) => {
+      for (const m of ms)
+        for (const n of m.addedNodes)
+          if (n.nodeType === 1)
+            [...(n.matches('.stat .v') ? [n] : []), ...n.querySelectorAll('.stat .v')].forEach((v) => {
+              if (!v.dataset.counted) {
+                v.dataset.counted = '1';
+                countUp(v);
+              }
+            });
+    }).observe(box, { childList: true, subtree: true });
+  countIn(body);
+  countIn(modal);
+
+  const ICON = {
+    table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 10v10"/>',
+    chat: '<path d="M4 5h16v11H9.5L5 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/>',
+    trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    filter: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
+  };
+  const icon = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
   const stat = (v, l) => `<div class="stat"><div class="v">${v}</div><div class="l">${esc(l)}</div></div>`;
 
   // ---------- pagina modello ----------
@@ -664,7 +828,7 @@
           : ''
       }
       <div class="mine"></div>
-      <div class="btns"><button class="btn" data-act="comments">${t('Filter comments and reviews', 'Filtra commenti e recensioni')}</button></div>`;
+      <div class="btns"><button class="btn" data-act="comments">${icon('filter')}${t('Filter comments and reviews', 'Filtra commenti e recensioni')}</button></div>`;
     body.querySelector('[data-act=comments]').onclick = () => openComments(id, d.titleTranslated || d.title);
     const own = await isMe(d.designCreator?.handle);
     if (own && settings.quickReplies) designComments(id); // per scegliere subito la lingua delle risposte rapide
@@ -740,18 +904,18 @@
   const bindGoTo = (list, designId) =>
     list.addEventListener('click', (e) => {
       const it = e.target.closest('.item[data-id]');
-      if (!it || e.target.closest('a')) return; // link a profilo e foto restano normali
+      if (!it || e.target.closest('a, .rp')) return; // link a profilo e foto e il riquadro di risposta restano normali
       goToComment(it.dataset.design || designId, it.dataset);
     });
 
   async function openComments(id, title) {
-    openModal(`${t('Comments and reviews', 'Commenti e recensioni')} – ${title}`, `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody"></div>`);
+    openModal(`${t('Comments and reviews', 'Commenti e recensioni')} – ${title}`, `<div class="sum">${loading(t('Loading…', 'Caricamento…'))}</div><div class="mbody"></div>`, true);
     const sum = modal.querySelector('.sum');
     let all;
     try {
       all = await loadComments(id, (n, total) => {
         if (ovl.hidden) return false;
-        sum.textContent = `${t('Loading…', 'Caricamento…')} ${n} / ${total ?? '?'}`;
+        showLoading(sum, t('Loading comments…', 'Carico i commenti…'), n, total);
       });
     } catch (e) {
       sum.innerHTML = `<span class="err">${t('Loading error', 'Errore nel caricamento')}: ${esc(e.message)}</span>`;
@@ -893,7 +1057,7 @@
         ${stat(fmt(u.boostGained), t('Boosts received', 'Boost ricevuti'))}
         ${stat(fmt(u.fanCount), t('Followers', 'Follower'))}
       </div>
-      <div class="btns"><button class="btn" data-act="models">${t('Table of all models', 'Tabella di tutti i modelli')}</button></div>
+      <div class="btns"><button class="btn" data-act="models">${icon('table')}${t('Table of all models', 'Tabella di tutti i modelli')}</button></div>
       <div class="mine"></div>`;
     const own = await isMe(u.handle);
     const mine = settings.pointsPanel && own;
@@ -901,7 +1065,7 @@
     if (own && token === renderToken) {
       body.querySelector('.btns').insertAdjacentHTML(
         'beforeend',
-        `<button class="btn sec" data-act="inbox">💬 ${t('To reply', 'Da rispondere')}</button><button class="btn sec" data-act="trends">📈 ${t('Trends', 'Andamento')}</button>`
+        `<button class="btn sec" data-act="inbox">${icon('chat')}${t('To reply', 'Da rispondere')}</button><button class="btn sec" data-act="trends">${icon('trend')}${t('Trends', 'Andamento')}</button>`
       );
       body.querySelector('[data-act=inbox]').onclick = () => openInbox(u);
       body.querySelector('[data-act=trends]').onclick = () => openTrends(u);
@@ -920,9 +1084,34 @@
     return rows;
   }
 
+  // Risposta a un commento o a una recensione, come la invia il sito (POST JSON con la sessione del sito).
+  // Su Firefox content.fetch fa partire la richiesta dalla pagina, come quelle di MakerWorld.
+  const pageFetch = (url, opts) =>
+    typeof cloneInto === 'function' && globalThis.content?.fetch ? content.fetch(url, cloneInto(opts, content)) : fetch(url, opts);
+  async function postReply(i, text) {
+    const rating = i.kind === 'rating';
+    const r = await pageFetch(`/api/v1/comment-service/${rating ? 'rating' : 'comment'}/${i.id}/reply`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-BBL-Client-Type': 'web', 'X-BBL-App-Source': 'makerworld', 'X-BBL-Client-Name': 'MakerWorld' },
+      body: JSON.stringify({ content: text, images: [], [rating ? 'replyId' : 'atCommentId']: 0, message: text, repliedMessage: '' }),
+    });
+    if (r.ok) return;
+    let msg = '';
+    try {
+      const j = JSON.parse(await r.text());
+      msg = j.error || j.message || j.msg || '';
+    } catch {}
+    throw new Error(msg || `HTTP ${r.status}`);
+  }
+  const replyChips = (lang) =>
+    `<button type="button" class="lang" data-rp="lang" title="${t('Language of the replies: click to switch', 'Lingua delle risposte: clicca per cambiarla')}">${lang === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}</button>` +
+    replies(lang).map((r, n) => `<button type="button" data-rp="ins" data-i="${n}" title="${esc(r)}">${esc(r.length > 40 ? `${r.slice(0, 38)}…` : r)}</button>`).join('');
+  const replyBtn = `<button type="button" class="btn sec" data-rp="open"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 3.5 2.5 7.5l4 4M3 7.5h6.5a4 4 0 0 1 4 4v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>${t('Reply', 'Rispondi')}</button>`;
+
   // ---------- da rispondere: commenti e recensioni senza la tua risposta, su tutti i tuoi modelli ----------
   async function openInbox(u) {
-    openModal(t('To reply', 'Da rispondere'), `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody"></div>`);
+    openModal(t('To reply', 'Da rispondere'), `<div class="sum">${loading(t('Loading…', 'Caricamento…'))}</div><div class="mbody"></div>`, true);
     const sum = modal.querySelector('.sum');
     const list = modal.querySelector('.mbody');
     const myHandle = u.handle.toLowerCase();
@@ -937,7 +1126,7 @@
           const items = (await loadComments(d.id).catch(() => null)) || [];
           for (const i of items)
             if (!i.authorReplied && (i.user.handle || '').toLowerCase() !== myHandle) all.push({ ...i, design: { id: d.id, title: d.titleTranslated || d.title } });
-          sum.textContent = `${t('Checking your models…', 'Controllo i tuoi modelli…')} ${++done} / ${designs.length}`;
+          showLoading(sum, t('Checking your models…', 'Controllo i tuoi modelli…'), ++done, designs.length);
         }
       };
       await Promise.all([worker(), worker(), worker(), worker()]); // 4 richieste alla volta
@@ -957,6 +1146,10 @@
     );
     const tb = modal.querySelector('.toolbar');
     const f = (k) => tb.querySelector(`[data-f=${k}]`);
+    let left = 0;
+    const setSum = () =>
+      (sum.textContent = t(`${left} waiting for your reply · reply right here, or click one to open it on the page`, `${left} in attesa di risposta · rispondi da qui o clicca per aprirlo sulla pagina`));
+    const empty = `<p class="muted">${t('Nothing waiting for a reply in this period.', 'Niente in attesa di risposta in questo periodo.')}</p>`;
     const draw = () => {
       const days = +f('days').value;
       const since = days ? Date.now() - days * 864e5 : 0;
@@ -969,11 +1162,65 @@
             (!f('pics').checked || i.images.length)
         )
         .sort((a, b) => new Date(b.time) - new Date(a.time));
-      sum.textContent = t(`${out.length} waiting for your reply · click one to open it on the page`, `${out.length} in attesa di risposta · clicca per aprirlo sulla pagina`);
-      list.innerHTML = out.slice(0, 500).map(itemHtml).join('') || `<p class="muted">${t('Nothing waiting for a reply in this period.', 'Niente in attesa di risposta in questo periodo.')}</p>`;
+      left = out.length;
+      setSum();
+      list.innerHTML = out.slice(0, 500).map(itemHtml).join('') || empty;
+      list.querySelectorAll('.item > div').forEach((d) => d.insertAdjacentHTML('beforeend', `<div class="rp">${replyBtn}</div>`));
     };
     tb.addEventListener('input', draw);
     bindGoTo(list);
+    // Rispondi direttamente da qui: riquadro con risposte rapide nella lingua di chi ha scritto.
+    list.addEventListener('input', (e) => {
+      const err = e.target.closest('.rp')?.querySelector('.err');
+      if (err) err.textContent = '';
+    });
+    list.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-rp]');
+      if (!b) return;
+      const rp = b.closest('.rp');
+      const it = rp.closest('.item');
+      const item = all.find((i) => i.kind === it.dataset.kind && String(i.id) === it.dataset.id);
+      const ta = rp.querySelector('textarea');
+      const act = b.dataset.rp;
+      if (act === 'open') {
+        rp.dataset.lang = 'en';
+        rp.innerHTML = `<div class="chips">${replyChips('en')}</div>
+          <textarea maxlength="1000" placeholder="${t('Write your reply…', 'Scrivi la tua risposta…')}"></textarea>
+          <div class="rpa"><span class="err"></span><button type="button" class="btn sec" data-rp="cancel">${t('Cancel', 'Annulla')}</button><button type="button" class="btn" data-rp="send">${t('Send', 'Invia')}</button></div>`;
+        rp.querySelector('textarea').focus();
+        const lang = await detectLang(item.orig || item.text);
+        if (rp.isConnected && rp.querySelector('.chips') && rp.dataset.lang === 'en' && lang !== 'en') {
+          rp.dataset.lang = lang;
+          rp.querySelector('.chips').innerHTML = replyChips(lang);
+        }
+      } else if (act === 'lang') {
+        rp.dataset.lang = rp.dataset.lang === 'it' ? 'en' : 'it';
+        rp.querySelector('.chips').innerHTML = replyChips(rp.dataset.lang);
+      } else if (act === 'ins') {
+        const before = ta.value.slice(0, ta.selectionStart);
+        ta.setRangeText((before && !/\s$/.test(before) ? ' ' : '') + replies(rp.dataset.lang)[+b.dataset.i], ta.selectionStart, ta.selectionEnd, 'end');
+        ta.focus();
+      } else if (act === 'cancel') {
+        rp.innerHTML = replyBtn;
+      } else if (act === 'send') {
+        const text = ta.value.trim();
+        const err = rp.querySelector('.err');
+        if (!text) return void (err.textContent = t('Write a reply first.', 'Scrivi prima una risposta.'));
+        rp.querySelectorAll('button, textarea').forEach((x) => (x.disabled = true));
+        err.textContent = t('Sending…', 'Invio…');
+        try {
+          await postReply(item, text);
+          all.splice(all.indexOf(item), 1);
+          it.remove();
+          left--;
+          setSum();
+          if (!list.querySelector('.item')) list.innerHTML = empty;
+        } catch (x) {
+          err.textContent = `${t('Not sent', 'Non inviata')}: ${x.message}`;
+          rp.querySelectorAll('button, textarea').forEach((x) => (x.disabled = false));
+        }
+      }
+    });
     draw();
   }
 
@@ -1051,7 +1298,7 @@
   }
 
   async function openTrends(u) {
-    openModal(t('Trends', 'Andamento'), `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody trends"></div>`);
+    openModal(t('Trends', 'Andamento'), `<div class="sum">${loading(t('Loading…', 'Caricamento…'))}</div><div class="mbody trends"></div>`);
     const sum = modal.querySelector('.sum');
     const box = modal.querySelector('.mbody');
     let h, agg;
@@ -1187,7 +1434,7 @@
   ];
 
   async function openModels(u, mine) {
-    openModal(t(`Models by ${u.name}`, `Modelli di ${u.name}`), `<div class="sum">${t('Loading…', 'Caricamento…')}</div><div class="mbody"></div>`);
+    openModal(t(`Models by ${u.name}`, `Modelli di ${u.name}`), `<div class="sum">${loading(t('Loading…', 'Caricamento…'))}</div><div class="mbody"></div>`);
     const sum = modal.querySelector('.sum');
     let rows;
     try {
@@ -1296,9 +1543,10 @@
     }
     if (!host.isConnected) document.documentElement.appendChild(host);
     panel.hidden = false;
+    placePanel();
     setCollapsed(settings.collapsed);
     maybeAskRating().catch(() => {});
-    body.innerHTML = `<span class="muted">${t('Loading…', 'Caricamento…')}</span>`;
+    body.innerHTML = loading(t('Loading…', 'Caricamento…'));
     try {
       if (r.type === 'model') await renderModel(r.id, token);
       else if (r.type === 'profile') await renderProfile(r.handle, token);
