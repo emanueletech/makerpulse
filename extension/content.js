@@ -188,6 +188,7 @@
       giftCards(region).catch(() => []),
       pointBills(m.uid, onProgress).catch(() => null),
     ]);
+    const fold = await lget('folds') || {};
     const total = s.userTotalPoint;
     const rate = agg ? sumSince(agg.byDay, 30) / 30 : 0;
     const rateEx = agg ? sumSince(agg.byDayEx, 30) / 30 : 0;
@@ -243,20 +244,20 @@
         .map(([id, e]) => ({ id, ...e, d30: sumSince(e.d, 30) }))
         .sort((a, b) => b.d30 - a.d30 || b.all - a.all)
         .slice(0, 8);
-      html += `<h4>${t('Top-earning models (30 days)', 'Modelli che rendono di più (30 gg)')}</h4><table><thead><tr><th>${t('Model', 'Modello')}</th><th class="n">${t('30 days', '30 gg')}</th><th class="n">${t('Total', 'Totale')}</th></tr></thead><tbody>
+      html += `<details class="fold" data-fold="top" ${fold.top ? 'open' : ''}><summary><h4>${t('Top-earning models (30 days)', 'Modelli che rendono di più (30 gg)')}</h4></summary><table><thead><tr><th>${t('Model', 'Modello')}</th><th class="n">${t('30 days', '30 gg')}</th><th class="n">${t('Total', 'Totale')}</th></tr></thead><tbody>
         ${top.map((e) => `<tr><td><a href="${localePrefix()}/models/${e.id}">${esc(e.t)}</a></td><td class="n">${fmt(Math.round(e.d30))}</td><td class="n">${fmt(Math.round(e.all))}</td></tr>`).join('')}
-        </tbody></table>`;
+        </tbody></table></details>`;
       const boosters = Object.entries(agg.boosters)
         .map(([h, u]) => ({ h, n: u.n, c30: sumSince(u.d, 30), last: Object.keys(u.d).sort().pop() }))
         .filter((u) => u.c30)
         .sort((a, b) => b.c30 - a.c30 || (b.last > a.last ? 1 : -1));
       if (boosters.length)
-        html += `<h4>${t(`Who boosted you (30 days): ${boosters.length}`, `Chi ti ha dato boost (30 gg): ${boosters.length}`)}</h4>
+        html += `<details class="fold" data-fold="boosters" ${fold.boosters ? 'open' : ''}><summary><h4>${t(`Who boosted you (30 days): ${boosters.length}`, `Chi ti ha dato boost (30 gg): ${boosters.length}`)}</h4></summary>
           <table><thead><tr><th>${t('User', 'Utente')}</th><th class="n">Boost</th><th class="n">${t('Last', 'Ultimo')}</th></tr></thead><tbody>
           ${boosters
             .slice(0, 15)
             .map((u) => `<tr><td><a href="${localePrefix()}/@${encodeURIComponent(u.h)}" target="_blank" rel="noopener">${esc(u.n)}</a></td><td class="n">${u.c30}</td><td class="n">${date(u.last)}</td></tr>`)
-            .join('')}</tbody></table>`;
+            .join('')}</tbody></table></details>`;
       html += `<p class="muted">${t(`Calculated from your ${fmt(agg.count)} point transactions. Forecasts use the average of the last 30 days.`, `Calcolato dalle tue ${fmt(agg.count)} transazioni punti. Le previsioni usano la media degli ultimi 30 giorni.`)}</p>`;
     }
     return html;
@@ -269,6 +270,14 @@
     });
     if (token !== renderToken) return;
     el.innerHTML = html;
+    // Ricorda quali sezioni hai lasciato aperte.
+    el.querySelectorAll('details.fold').forEach((d) =>
+      d.addEventListener('toggle', async () => {
+        const f = (await lget('folds')) || {};
+        f[d.dataset.fold] = d.open;
+        lset('folds', f);
+      })
+    );
     el.querySelector('.reg')?.addEventListener('change', (e) => {
       settings.giftRegion = e.target.value;
       save({ giftRegion: e.target.value });
@@ -342,6 +351,14 @@
     h4::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--green); }
     h4.gold::before { background: var(--gold); }
     h4 select { margin-left: auto; font-size: 12px; font-weight: 500; }
+    /* sezioni espandibili: clic sul titolo per aprirle o chiuderle */
+    details.fold > summary { list-style: none; cursor: pointer; user-select: none; }
+    details.fold > summary::-webkit-details-marker { display: none; }
+    details.fold > summary h4::after { content: ""; margin-left: auto; width: 7px; height: 7px; border: solid var(--slate); border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translate(-2px, -2px); transition: transform .2s; }
+    details.fold[open] > summary h4::after { transform: rotate(-135deg) translate(-2px, -2px); }
+    details.fold > summary:hover h4 { color: var(--green-deep); }
+    details.fold[open] > table { animation: mp-in .3s cubic-bezier(.2,.7,.2,1) backwards; }
     select, input[type=search] { font-size: 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; box-shadow: var(--shadow-sm); }
     select { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a96a2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
