@@ -1,7 +1,7 @@
 <p align="center"><img src="extension/icons/128.png" width="96" alt="MakerPulse"></p>
 
 <h1 align="center">MakerPulse</h1>
-<p align="center">Stats, points, gift cards, review filters and quick replies for <a href="https://makerworld.com">MakerWorld</a> creators.</p>
+<p align="center">Stats, points, gift cards, replies from one inbox, review filters and trends for <a href="https://makerworld.com">MakerWorld</a> creators.</p>
 
 <p align="center">
   <a href="https://github.com/emanueletech/makerpulse/releases/latest/download/makerpulse.zip"><img src="https://img.shields.io/badge/Download-ZIP-00AE42?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
@@ -27,9 +27,10 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/comments.png" width="32%" alt="Review filter">
-  <img src="docs/screenshots/replies.png" width="32%" alt="Quick replies">
-  <img src="docs/screenshots/table.png" width="32%" alt="Models table">
+  <img src="docs/screenshots/inbox.png" width="49%" alt="To reply: answer comments and reviews from one list">
+  <img src="docs/screenshots/trends.png" width="49%" alt="Trends: points per day and top models">
+  <img src="docs/screenshots/comments.png" width="49%" alt="Review filter">
+  <img src="docs/screenshots/table.png" width="49%" alt="Models table">
 </p>
 
 ---
@@ -37,15 +38,15 @@
 ## Features
 
 - **Model page** – downloads, prints, likes, collections, boosts, comments, print/download and like/download ratios, downloads per day, per-profile breakdown (downloads, prints, rating, print time). On your own models: points earned (total, last 30 and 7 days, from boosts) and their gift card value.
-- **Points & gift cards** – total, exclusive and regular points, points earned in the last 7 and 30 days, how many gift cards you can redeem per region and how many points to the next one, cash redemption amount, top-earning models.
+- **Points & gift cards** – total, exclusive and regular points, points earned in the last 7 and 30 days, how many gift cards you can redeem per region and how many points to the next one, cash redemption amount, top-earning models (collapsible).
 - **Reviews & comments** – loads every comment and filters by stars, text, photos, successful print, boost, or unanswered; search and sorting. Click a result to jump to it on the page.
 - **To reply** – every review and comment you haven't answered yet, across all your models, in one list (filter by period, text, photos). Reply right from the list with **Reply**: your quick replies are there in the commenter's language, and answered items drop off the list.
-- **Trends** – daily snapshots of your models saved in your browser: downloads per day, points per day, which models are growing or slowing down.
+- **Trends** – summary cards (points in the last 7 and 30 days, daily average, change vs the previous 30 days, best day), downloads and points per day with the average line, and which models earn the most. Model snapshots are saved only in your browser.
 - **Forecasts & boosters** – the date you'll reach the next gift card or the cash minimum at your current pace, and who boosted you in the last 30 days.
 - **Model cards** – prints, boosts, print rate and hot score shown on every model card on home, search and profile pages.
 - **Models table** – every model of a creator in a sortable table with name search, an exclusive-only filter and totals (with points per model on your own profile).
 - **Quick replies** – your saved replies appear above any comment or reply box, in the language of the person you're replying to (Italian or English); hover to read the full text, click to insert. Edit them in the popup or save what you just typed with `+`.
-- **Movable panel** – drag the panel by its title bar and it stays where you leave it; collapsed, it shrinks to a small logo button.
+- **Movable panel** – drag the panel by its title bar and it stays where you leave it; collapsed, it shrinks to a small logo button. Animated numbers and loading bars.
 - Works with every MakerWorld language and with in-site navigation (no reload needed). English and Italian interface.
 
 ## Install
@@ -79,7 +80,7 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 ## Italiano
 
-Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con ricerca e totali e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
+Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, una lista "Da rispondere" da cui rispondere a commenti e recensioni senza aprire il modello, filtro di commenti e recensioni, andamento di punti e download, tabella dei modelli con ricerca e totali e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
 **Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp), da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) o da [Firefox Add-ons](https://addons.mozilla.org/addon/makerpulse-makerworld/) (Firefox 140 o successivo): si aggiorna da sola.
 
