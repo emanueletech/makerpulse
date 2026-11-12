@@ -337,8 +337,21 @@
     .panel .head { cursor: move; touch-action: none; }
     .head .logo { width: 24px; height: 24px; flex: none; }
     .head b { flex: 1; font-size: 14px; font-weight: 700; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .head button { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,.08); border: 0; color: #fff; font-size: 15px; cursor: pointer; line-height: 1; }
-    .head button:hover { background: rgba(255,255,255,.18); }
+    .head button { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 28px; height: 28px; padding: 0; border-radius: 8px;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); color: #fff; cursor: pointer; transition: background .12s, border-color .12s; }
+    .head button:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.22); }
+    .head button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .head .x:hover, .head .mx:hover { background: #cf222e; border-color: #cf222e; }
+    /* altro contenuto sotto: sfumatura e invito a scorrere */
+    .more { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px;
+      pointer-events: none; background: linear-gradient(to bottom, transparent, var(--surface) 70%); }
+    .more[hidden], .panel.collapsed .more { display: none; }
+    .more button { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+      border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 600; box-shadow: var(--shadow-sm); cursor: pointer; animation: mp-bob 1.8s ease-in-out infinite; }
+    .more button:hover { border-color: var(--green); background: var(--green-soft); }
+    .more svg { width: 12px; height: 12px; fill: none; stroke: var(--green); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    @keyframes mp-bob { 50% { transform: translateY(3px); } }
+    @media (prefers-reduced-motion: reduce) { .more button { animation: none; } }
     .body { padding: 14px; overflow: auto; }
     /* scheda tecnica: celle separate da righe sottili, le prime due più grandi */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
@@ -483,10 +496,11 @@
     .qr button.save { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; box-shadow: 0 2px 0 var(--green-deep); }
   </style>
   <div class="panel" hidden>
-    <div class="head"><svg class="logo" viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="22" fill="#14181c"/><rect x="20" y="62" width="56" height="7" rx="3.5" fill="#00AE42" opacity=".55"/><rect x="24" y="73" width="48" height="7" rx="3.5" fill="#00AE42" opacity=".3"/><polyline points="14,50 30,50 37,34 47,58 56,22 63,50 82,50" fill="none" stroke="#00AE42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>MakerPulse</b><button class="tog" title="${t('Collapse/expand', 'Comprimi/espandi')}">▾</button><button class="x" title="${t('Close', 'Chiudi')}">×</button></div>
+    <div class="head"><svg class="logo" viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="22" fill="#14181c"/><rect x="20" y="62" width="56" height="7" rx="3.5" fill="#00AE42" opacity=".55"/><rect x="24" y="73" width="48" height="7" rx="3.5" fill="#00AE42" opacity=".3"/><polyline points="14,50 30,50 37,34 47,58 56,22 63,50 82,50" fill="none" stroke="#00AE42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>MakerPulse</b><button class="tog" title="${t('Collapse', 'Comprimi')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button><button class="x" title="${t('Close', 'Chiudi')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></button></div>
     <div class="rate" hidden><span>⭐ ${t('Is MakerPulse useful? A rating on the store helps other creators find it.', 'Ti è utile MakerPulse? Una valutazione sullo store aiuta altri creator a trovarla.')}</span>
       <div><a class="btn" data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener">${t('Rate it', 'Valuta')}</a><button class="btn sec" data-rate="later">${t('Later', 'Più tardi')}</button><button class="btn sec" data-rate="never">${t('No thanks', 'No grazie')}</button></div></div>
     <div class="body"></div>
+    <div class="more" hidden><button type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>${t('Scroll for more', 'Scorri per altre info')}</button></div>
   </div>
   <div class="ovl" hidden><div class="modal"></div></div>
   <div class="qr" hidden></div>`;
@@ -499,10 +513,19 @@
   function setCollapsed(c) {
     settings.collapsed = c;
     panel.classList.toggle('collapsed', c);
-    root.querySelector('.tog').textContent = c ? '▸' : '▾';
     save({ collapsed: c });
     placePanel();
+    updMore();
   }
+  // Invito a scorrere finché sotto c'è altro contenuto del pannello.
+  const more = root.querySelector('.more');
+  function updMore() {
+    more.hidden = body.scrollHeight - body.scrollTop - body.clientHeight < 12;
+  }
+  body.addEventListener('scroll', updMore, { passive: true });
+  new MutationObserver(updMore).observe(body, { childList: true, subtree: true, attributes: true, attributeFilter: ['open'] });
+  new ResizeObserver(updMore).observe(body);
+  more.querySelector('button').addEventListener('click', () => body.scrollBy({ top: body.clientHeight * 0.8, behavior: 'smooth' }));
   const head = root.querySelector('.head');
   let dragged = false;
   head.addEventListener('click', (e) => {
@@ -564,7 +587,7 @@
 
   function openModal(title, html, narrow) {
     modal.classList.toggle('narrow', !!narrow);
-    modal.innerHTML = `<div class="head">${root.querySelector('.head .logo').outerHTML}<b>${esc(title)}</b><button class="mx" title="${t('Close', 'Chiudi')}">×</button></div>${html}`;
+    modal.innerHTML = `<div class="head">${root.querySelector('.head .logo').outerHTML}<b>${esc(title)}</b><button class="mx" title="${t('Close', 'Chiudi')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></button></div>${html}`;
     modal.querySelector('.mx').onclick = closeModal;
     ovl.hidden = false;
   }
