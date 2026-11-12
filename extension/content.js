@@ -540,6 +540,22 @@
     .rate .ra button:hover { color: #fff; text-decoration: underline; }
     @media (prefers-reduced-motion: reduce) { .rate .stars a { animation: none; } }
     .panel.collapsed .rate { display: none; }
+    /* novità dopo un aggiornamento */
+    .news { position: relative; flex: none; padding: 14px 16px 12px; color: #fff; border-bottom: 2px solid var(--green);
+      background: radial-gradient(120% 120% at 0% 0%, rgba(0,174,66,.35), transparent 60%), var(--layers), linear-gradient(180deg, var(--graphite-2), var(--graphite));
+      animation: mp-in .4s cubic-bezier(.2,.7,.2,1) backwards; }
+    .panel.collapsed .news { display: none; }
+    /* da compresso, un pallino dorato che pulsa avvisa che ci sono novità */
+    .panel.collapsed.has-news .head::after { content: ""; position: absolute; top: 5px; right: 5px; width: 11px; height: 11px; border-radius: 50%;
+      background: #f5c451; box-shadow: 0 0 0 2px var(--graphite); animation: mp-ping 1.6s ease-out infinite; }
+    @keyframes mp-ping { 0% { box-shadow: 0 0 0 2px var(--graphite), 0 0 0 2px rgba(245,196,81,.7); } 100% { box-shadow: 0 0 0 2px var(--graphite), 0 0 0 10px rgba(245,196,81,0); } }
+    @media (prefers-reduced-motion: reduce) { .panel.collapsed.has-news .head::after { animation: none; } }
+    .news .nt { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 750; }
+    .news .nt span { padding: 2px 8px; border-radius: 999px; background: var(--green); font-size: 11px; font-weight: 700; }
+    .news ul { margin: 8px 0 10px; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 12.5px; line-height: 1.4; color: rgba(255,255,255,.85); }
+    .news li { display: flex; gap: 8px; }
+    .news li::before { content: ""; flex: none; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(0,174,66,.25); }
+    .news .ok { padding: 7px 16px; font-size: 12px; border-radius: 999px; }
     .qr button.save { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; box-shadow: 0 2px 0 var(--green-deep); }
   </style>
   <div class="panel" hidden>
@@ -549,6 +565,7 @@
       <div class="stars">${[1, 2, 3, 4, 5].map((n) => `<a data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener" title="${t(`${n} stars – rate on the store`, `${n} stelle – valuta sullo store`)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9z"/></svg></a>`).join('')}</div>
       <a class="go" data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener">${t('Rate on the store', 'Valuta sullo store')}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
       <div class="ra"><button data-rate="later">${t('Later', 'Più tardi')}</button><button data-rate="never">${t('No thanks', 'No grazie')}</button></div></div>
+    <div class="news" hidden></div>
     <div class="body"></div>
     <div class="more" hidden><button type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>${t('Scroll for more', 'Scorri per altre info')}</button></div>
   </div>
@@ -660,6 +677,35 @@
     ovl.hidden = true;
     modal.innerHTML = '';
   }
+
+  // ---------- novità: dopo un aggiornamento dallo store, una volta sola ----------
+  // background.js segna la versione appena installata come aggiornamento; il riquadro sparisce con "Ho capito".
+  const NEWS = {
+    '1.1': [
+      t('Reply right from the <b>To reply</b> list, without opening the model', 'Rispondi direttamente dalla lista <b>Da rispondere</b>, senza aprire il modello'),
+      t('<b>Trends</b> redesigned: summary, average line and top-earning models', '<b>Andamento</b> rinnovato: riepilogo, linea della media e modelli che rendono di più'),
+      t('Move this panel by dragging its title bar', 'Sposta questo pannello trascinando la barra del titolo'),
+      t('Models table with name search and an <b>Exclusive only</b> filter', 'Tabella modelli con ricerca per nome e filtro <b>Solo esclusivi</b>'),
+    ],
+  };
+  const news = root.querySelector('.news');
+  async function maybeWhatsNew() {
+    const v = await lget('whatsNew');
+    const items = v && NEWS[v.split('.').slice(0, 2).join('.')];
+    if (!items) return false;
+    news.innerHTML = `<div class="nt">${t("What's new in MakerPulse", 'Novità di MakerPulse')} <span>${esc(v)}</span></div>
+      <ul>${items.map((i) => `<li><span>${i}</span></li>`).join('')}</ul>
+      <button type="button" class="btn ok">${t('Got it', 'Ho capito')}</button>`;
+    news.hidden = false;
+    panel.classList.add('has-news');
+    return true;
+  }
+  news.addEventListener('click', (e) => {
+    if (!e.target.closest('.ok')) return;
+    news.hidden = true;
+    panel.classList.remove('has-news');
+    lset('whatsNew', null);
+  });
 
   // ---------- invito a valutare: una volta, dopo una settimana e 5 aperture del pannello ----------
   // "Più tardi" lo ripropone dopo 30 giorni, "No grazie" e "Valuta" lo chiudono per sempre.
@@ -1681,7 +1727,9 @@
     panel.hidden = false;
     placePanel();
     setCollapsed(settings.collapsed);
-    maybeAskRating().catch(() => {});
+    maybeWhatsNew()
+      .then((shown) => shown || maybeAskRating())
+      .catch(() => {});
     body.innerHTML = loading(t('Loading…', 'Caricamento…'));
     try {
       if (r.type === 'model') await renderModel(r.id, token);
