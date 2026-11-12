@@ -546,7 +546,9 @@
       animation: mp-in .4s cubic-bezier(.2,.7,.2,1) backwards; }
     .panel.collapsed .news { display: none; }
     /* da compresso, un pallino dorato che pulsa avvisa che ci sono novità */
-    .panel.collapsed.has-news .head::after { content: ""; position: absolute; top: 5px; right: 5px; width: 11px; height: 11px; border-radius: 50%;
+    .panel.collapsed.has-news { overflow: visible; } /* il pallino esce dal cerchio come un badge, senza essere tagliato */
+    .panel.collapsed.has-news .head { border-radius: 999px; }
+    .panel.collapsed.has-news .head::after { content: ""; position: absolute; top: -1px; right: -1px; width: 13px; height: 13px; border-radius: 50%;
       background: #f5c451; box-shadow: 0 0 0 2px var(--graphite); animation: mp-ping 1.6s ease-out infinite; }
     @keyframes mp-ping { 0% { box-shadow: 0 0 0 2px var(--graphite), 0 0 0 2px rgba(245,196,81,.7); } 100% { box-shadow: 0 0 0 2px var(--graphite), 0 0 0 10px rgba(245,196,81,0); } }
     @media (prefers-reduced-motion: reduce) { .panel.collapsed.has-news .head::after { animation: none; } }
