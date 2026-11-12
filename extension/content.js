@@ -457,8 +457,12 @@
     .starpick button:hover { transform: scale(1.18); }
     .starlbl { font-size: 12px; color: var(--slate); min-width: 90px; }
     .sum { padding: 10px 16px; color: var(--slate); font-size: 12px; border-bottom: 1px solid var(--line); background: var(--surface); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .models { box-shadow: var(--shadow-sm); margin-top: 12px; }
-    .models th { position: sticky; top: 0; z-index: 1; cursor: pointer; padding-top: 10px; }
+    .models { box-shadow: var(--shadow-sm); margin-top: 12px; overflow: clip; } /* clip, non hidden: così l'intestazione resta fissa scorrendo */
+    .models td:first-child { min-width: 280px; }
+    .models .tt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+    .models .tt .tag { margin: 0; font-size: 10px; padding: 1px 7px; }
+    .models th.on { color: var(--green-deep); }
+    .models th { position: sticky; top: -4px; /* copre anche il margine sopra la tabella */ z-index: 1; cursor: pointer; padding-top: 10px; }
     .models th:hover { color: var(--ink); }
     .models td { background: var(--surface); }
     .models img { width: 46px; height: 46px; object-fit: cover; border-radius: 10px; box-shadow: var(--shadow-sm); }
@@ -477,6 +481,23 @@
     .chart.pts path { fill: var(--bar-pts); }
     .chart path.on { opacity: .75; }
     .chart .hit { fill: transparent; cursor: default; }
+    .chart path[class^=bar-] { transform-box: fill-box; transform-origin: bottom; animation: mp-bar .6s cubic-bezier(.2,.7,.2,1) backwards; }
+    .chart .avg line { stroke: var(--slate); stroke-width: 1.2; stroke-dasharray: 5 5; opacity: .7; }
+    .chart .avg text { fill: var(--ink); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+    @keyframes mp-bar { from { transform: scaleY(0); } }
+    @media (prefers-reduced-motion: reduce) { .chart path[class^=bar-] { animation: none; } }
+    /* andamento: riquadri di riepilogo, stato vuoto, mini barre nella tabella */
+    .grid.kpi { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 12px; }
+    .grid.kpi .stat { background: var(--surface); padding: 12px; }
+    .grid.kpi .stat .v { font-size: 22px; letter-spacing: -.02em; }
+    .stat .v.up { color: var(--green-deep); }
+    .stat .v.down { color: #c2410c; }
+    .empty { display: flex; gap: 12px; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; color: var(--slate); font-size: 12.5px; line-height: 1.45; }
+    .empty svg { width: 28px; height: 28px; flex: none; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .mini { display: inline-block; width: 64px; height: 6px; margin-right: 10px; vertical-align: middle; border-radius: 3px; background: var(--plate); overflow: hidden; }
+    .mini i { display: block; height: 100%; border-radius: 3px; background: var(--bar-pts); animation: mp-grow .8s cubic-bezier(.2,.7,.2,1) backwards; }
+    .mbody td a { color: var(--ink); text-decoration: none; font-weight: 500; }
+    .mbody td a:hover { color: var(--green-deep); text-decoration: underline; }
     .chart .tip { position: absolute; transform: translate(-50%, -100%); pointer-events: none; background: var(--graphite); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 12px; white-space: nowrap; box-shadow: var(--shadow-sm); }
     .up { color: var(--green-deep); font-weight: 600; }
     .down { color: #c2410c; font-weight: 600; }
@@ -489,16 +510,44 @@
     .qr .prev.on { color: var(--ink); background: var(--green-soft); }
     .qr button.lang, .rp .chips button.lang { background: var(--graphite); border-color: var(--graphite); color: #fff; font-weight: 600; }
     /* invito a valutare l'estensione */
-    .rate { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: var(--gold-soft); border-bottom: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; }
-    .rate div { display: flex; flex-wrap: wrap; gap: 6px; }
-    .rate .btn { padding: 6px 12px; font-size: 12px; text-decoration: none; }
+    .rate { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 16px 12px; text-align: center; color: #fff; overflow: hidden;
+      background: radial-gradient(120% 120% at 50% 0%, rgba(201,162,77,.35), transparent 60%), var(--layers), linear-gradient(180deg, var(--graphite-2), var(--graphite));
+      border-bottom: 2px solid var(--gold); }
+    .rate .rt { font-size: 15px; font-weight: 750; letter-spacing: -.01em; }
+    .rate .rs { font-size: 12px; color: rgba(255,255,255,.72); line-height: 1.4; max-width: 300px; }
+    .rate .stars { display: flex; gap: 4px; margin: 8px 0 4px; }
+    /* le stelle si accendono da 1 a 5, restano accese un attimo e il ciclo riparte */
+    .rate .stars a { display: flex; color: #f5c451; filter: drop-shadow(0 2px 6px rgba(245,196,81,.45)); transition: transform .15s, opacity .15s; animation: 3.2s ease-in-out infinite; }
+    ${[1, 2, 3, 4, 5]
+      .map((n) => {
+        const a = 5 + (n - 1) * 12;
+        return `.rate .stars a:nth-child(${n}) { animation-name: mp-fill-${n}; }
+    @keyframes mp-fill-${n} { 0%, ${a}% { color: rgba(255,255,255,.22); filter: none; transform: none; } ${a + 5}% { color: #f5c451; transform: scale(1.3); }
+      ${a + 10}%, 86% { color: #f5c451; filter: drop-shadow(0 2px 6px rgba(245,196,81,.45)); transform: none; } 96%, 100% { color: rgba(255,255,255,.22); filter: none; } }`;
+      })
+      .join(' ')}
+    .rate .stars:hover a { animation: none; }
+    .rate .stars svg { width: 30px; height: 30px; fill: currentColor; }
+    .rate .stars:hover a { opacity: .35; }
+    .rate .stars a:hover, .rate .stars a:has(~ a:hover) { opacity: 1; transform: translateY(-2px) scale(1.15); }
+    .rate .go { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 8px 18px; border-radius: 999px; background: linear-gradient(180deg, #f7cf63, #e0a93a);
+      color: #2a1f05; font-size: 13px; font-weight: 750; text-decoration: none; box-shadow: 0 2px 0 #a8822f, 0 8px 18px -6px rgba(245,196,81,.6); transition: transform .12s; }
+    .rate .go:hover { transform: translateY(-1px); }
+    .rate .go svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .rate .ra { display: flex; gap: 14px; margin-top: 4px; }
+    .rate .ra button { background: none; border: 0; padding: 4px; color: rgba(255,255,255,.6); font-size: 12px; cursor: pointer; }
+    .rate .ra button:hover { color: #fff; text-decoration: underline; }
+    @media (prefers-reduced-motion: reduce) { .rate .stars a { animation: none; } }
     .panel.collapsed .rate { display: none; }
     .qr button.save { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; box-shadow: 0 2px 0 var(--green-deep); }
   </style>
   <div class="panel" hidden>
     <div class="head"><svg class="logo" viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="22" fill="#14181c"/><rect x="20" y="62" width="56" height="7" rx="3.5" fill="#00AE42" opacity=".55"/><rect x="24" y="73" width="48" height="7" rx="3.5" fill="#00AE42" opacity=".3"/><polyline points="14,50 30,50 37,34 47,58 56,22 63,50 82,50" fill="none" stroke="#00AE42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>MakerPulse</b><button class="tog" title="${t('Collapse', 'Comprimi')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button><button class="x" title="${t('Close', 'Chiudi')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></button></div>
-    <div class="rate" hidden><span>⭐ ${t('Is MakerPulse useful? A rating on the store helps other creators find it.', 'Ti è utile MakerPulse? Una valutazione sullo store aiuta altri creator a trovarla.')}</span>
-      <div><a class="btn" data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener">${t('Rate it', 'Valuta')}</a><button class="btn sec" data-rate="later">${t('Later', 'Più tardi')}</button><button class="btn sec" data-rate="never">${t('No thanks', 'No grazie')}</button></div></div>
+    <div class="rate" hidden><div class="rt">${t('Enjoying MakerPulse?', 'Ti piace MakerPulse?')}</div>
+      <div class="rs">${t('Rate it on the store: it takes a few seconds and helps other creators find it.', 'Valutala sullo store: bastano pochi secondi e aiuti altri creator a trovarla.')}</div>
+      <div class="stars">${[1, 2, 3, 4, 5].map((n) => `<a data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener" title="${t(`${n} stars – rate on the store`, `${n} stelle – valuta sullo store`)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9z"/></svg></a>`).join('')}</div>
+      <a class="go" data-rate="done" href="${esc(globalThis.MAKERPULSE_STORE_URL || '')}" target="_blank" rel="noopener">${t('Rate on the store', 'Valuta sullo store')}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
+      <div class="ra"><button data-rate="later">${t('Later', 'Più tardi')}</button><button data-rate="never">${t('No thanks', 'No grazie')}</button></div></div>
     <div class="body"></div>
     <div class="more" hidden><button type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>${t('Scroll for more', 'Scorri per altre info')}</button></div>
   </div>
@@ -517,12 +566,27 @@
     placePanel();
     updMore();
   }
-  // Invito a scorrere finché sotto c'è altro contenuto del pannello.
+  // Invito a scorrere finché sotto c'è altro contenuto, fino alla prima volta che scorri il pannello: poi non serve più.
   const more = root.querySelector('.more');
+  let scrollSeen = true; // finché non si sa, non mostrarlo
+  lget('scrollSeen').then((v) => {
+    scrollSeen = !!v;
+    updMore();
+  });
   function updMore() {
-    more.hidden = body.scrollHeight - body.scrollTop - body.clientHeight < 12;
+    more.hidden = scrollSeen || body.scrollHeight - body.scrollTop - body.clientHeight < 12;
   }
-  body.addEventListener('scroll', updMore, { passive: true });
+  body.addEventListener(
+    'scroll',
+    () => {
+      if (!scrollSeen && body.scrollTop > 40) {
+        scrollSeen = true;
+        lset('scrollSeen', true);
+      }
+      updMore();
+    },
+    { passive: true }
+  );
   new MutationObserver(updMore).observe(body, { childList: true, subtree: true, attributes: true, attributeFilter: ['open'] });
   new ResizeObserver(updMore).observe(body);
   more.querySelector('button').addEventListener('click', () => body.scrollBy({ top: body.clientHeight * 0.8, behavior: 'smooth' }));
@@ -1292,7 +1356,7 @@
   const shortDay = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString(LOC, { day: 'numeric', month: 'short' });
 
   // Grafico a colonne, una sola serie: [{ d: 'YYYY-MM-DD', v, tip }]. Il valore esatto è nel tooltip.
-  function barChart(series, cls) {
+  function barChart(series, cls, avgLabel) {
     const W = 1000, H = 190, L = 46, R = 8, T = 12, B = 26;
     const raw = Math.max(1, ...series.map((p) => p.v));
     const step = 10 ** Math.floor(Math.log10(raw));
@@ -1311,10 +1375,14 @@
         const r = Math.min(4, h, bw / 2);
         const path = h ? `M${x},${H - B}V${H - B - h + r}Q${x},${H - B - h} ${x + r},${H - B - h}H${x + bw - r}Q${x + bw},${H - B - h} ${x + bw},${H - B - h + r}V${H - B}Z` : '';
         const label = i % every === 0 || i === series.length - 1 ? `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${shortDay(p.d)}</text>` : '';
-        return `<path class="bar-${i}" d="${path}"/>${label}<rect class="hit" data-i="${i}" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(p.tip)}"/>`;
+        return `<path class="bar-${i}" d="${path}" style="animation-delay:${i * 10}ms"/>${label}<rect class="hit" data-i="${i}" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(p.tip)}"/>`;
       })
       .join('');
-    return `<div class="chart ${cls}"><svg viewBox="0 0 ${W} ${H}" role="img"><g class="grid">${grid}</g>${bars}</svg><div class="tip" hidden></div></div>`;
+    const avg = series.reduce((a, p) => a + p.v, 0) / (series.length || 1);
+    const avgLine = avgLabel && avg
+      ? `<g class="avg"><line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}"/><text x="${W - R}" y="${y(avg) - 5}" text-anchor="end">${esc(avgLabel)} ${fmt(Math.round(avg))}</text></g>`
+      : '';
+    return `<div class="chart ${cls}"><svg viewBox="0 0 ${W} ${H}" role="img"><g class="grid">${grid}</g>${bars}${avgLine}</svg><div class="tip" hidden></div></div>`;
   }
   function bindCharts(el) {
     el.querySelectorAll('.chart').forEach((c) => {
@@ -1338,7 +1406,7 @@
   }
 
   async function openTrends(u) {
-    openModal(t('Trends', 'Andamento'), `<div class="sum">${loading(t('Loading…', 'Caricamento…'))}</div><div class="mbody trends"></div>`);
+    openModal(t('Trends', 'Andamento'), `<div class="sum">${loading(t('Loading…', 'Caricamento…'))}</div><div class="mbody trends"></div>`, true);
     const sum = modal.querySelector('.sum');
     const box = modal.querySelector('.mbody');
     let h, agg;
@@ -1359,6 +1427,25 @@
     };
     let html = '';
 
+    // Riepilogo in alto: punti degli ultimi giorni, media, giorno migliore, confronto col mese prima.
+    if (agg) {
+      const p7 = Math.round(sumSince(agg.byDay, 7));
+      const p30 = Math.round(sumSince(agg.byDay, 30));
+      const prev = Math.round(sumSince(agg.byDay, 60)) - p30;
+      const best = Object.entries(agg.byDay)
+        .filter(([d]) => d >= daysAgo(60))
+        .sort((a, b) => b[1] - a[1])[0];
+      const pc = prev ? Math.round(((p30 - prev) / prev) * 100) : null;
+      const cell = (v, l, cls = '') => `<div class="stat"><div class="v ${cls}">${v}</div><div class="l">${esc(l)}</div></div>`;
+      html += `<div class="grid kpi">
+        ${cell(fmt(p7), t('Points, last 7 days', 'Punti ultimi 7 giorni'))}
+        ${cell(fmt(p30), t('Points, last 30 days', 'Punti ultimi 30 giorni'))}
+        ${cell(dec(p30 / 30, 1), t('Points per day (30-day average)', 'Punti al giorno (media 30 gg)'))}
+        ${pc == null ? '' : cell(`${pc >= 0 ? '▲' : '▼'} ${Math.abs(pc)}%`, t('vs previous 30 days', 'vs i 30 giorni prima'), pc >= 0 ? 'up' : 'down')}
+        ${best ? cell(fmt(Math.round(best[1])), t(`Best day · ${shortDay(best[0])}`, `Giorno migliore · ${shortDay(best[0])}`)) : ''}
+      </div>`;
+    }
+
     // Download al giorno: differenza tra fotografie consecutive.
     const dl = days.slice(1).map((d, i) => {
       const v = Math.max(0, h.days[d].dl - h.days[days[i]].dl);
@@ -1368,11 +1455,11 @@
     html += `<h4>${t('Downloads per day', 'Download al giorno')}</h4>`;
     html +=
       dl.length >= 1
-        ? barChart(dl.slice(-60), 'dl')
-        : `<p class="muted">${t(
+        ? barChart(dl.slice(-60), 'dl', t('avg', 'media'))
+        : `<div class="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 14v3M12 14h2"/></svg><span>${t(
             'History starts today: MakerPulse saves a snapshot of your models once a day while you browse MakerWorld. Come back tomorrow to see the first bars.',
             'Lo storico parte da oggi: MakerPulse salva una fotografia dei tuoi modelli una volta al giorno mentre navighi su MakerWorld. Torna domani per vedere le prime colonne.'
-          )}</p>`;
+          )}</span></div>`;
 
     // Punti al giorno: dalle transazioni, disponibili subito.
     if (agg) {
@@ -1382,7 +1469,7 @@
         const v = Math.round(agg.byDay[d] || 0);
         pts.push({ d, v, tip: `${shortDay(d)}: ${fmt(v)} ${t('points', 'punti')}` });
       }
-      html += `<h4 class="gold">${t('Points per day (60 days)', 'Punti al giorno (60 giorni)')}</h4>${barChart(pts, 'pts')}`;
+      html += `<h4 class="gold">${t('Points per day (60 days)', 'Punti al giorno (60 giorni)')}</h4>${barChart(pts, 'pts', t('avg', 'media'))}`;
     }
 
     // Tabella per modello: ultimi 7 giorni contro i 7 precedenti.
@@ -1401,16 +1488,25 @@
       const pc = Math.round(((r.d7 - r.p7) / r.p7) * 100);
       return `<span class="${pc >= 0 ? 'up' : 'down'}">${pc >= 0 ? '▲' : '▼'} ${Math.abs(pc)}%</span>`;
     };
+    // Le colonne dei download servono solo quando c'è più di una fotografia.
+    const hasDl = days.length > 1;
+    const maxPts = Math.max(1, ...rows.map((r) => r.pts30));
     html += `<h4>${t('Your models', 'I tuoi modelli')}</h4>
-      <table><thead><tr><th>${t('Model', 'Modello')}</th><th class="n">${partial ? t(`Downloads since ${shortDay(b7.d)}`, `Download dal ${shortDay(b7.d)}`) : t('Downloads 7 days', 'Download 7 gg')}</th><th class="n">${t('vs previous 7 days', 'vs 7 gg prima')}</th><th class="n">${t('Points 30 days', 'Punti 30 gg')}</th></tr></thead><tbody>
+      <table><thead><tr><th>${t('Model', 'Modello')}</th>${hasDl ? `<th class="n">${partial ? t(`Downloads since ${shortDay(b7.d)}`, `Download dal ${shortDay(b7.d)}`) : t('Downloads 7 days', 'Download 7 gg')}</th><th class="n">${t('vs previous 7 days', 'vs 7 gg prima')}</th>` : ''}<th class="n">${t('Points 30 days', 'Punti 30 gg')}</th></tr></thead><tbody>
       ${rows
         .slice(0, 100)
-        .map((r) => `<tr><td><a href="${localePrefix()}/models/${r.id}" target="_blank" rel="noopener">${esc(r.title)}</a></td><td class="n">${days.length > 1 ? fmt(r.d7) : '–'}</td><td class="n">${trend(r)}</td><td class="n">${fmt(r.pts30)}</td></tr>`)
+        .map(
+          (r) =>
+            `<tr><td><a href="${localePrefix()}/models/${r.id}" target="_blank" rel="noopener">${esc(r.title)}</a></td>${hasDl ? `<td class="n">${fmt(r.d7)}</td><td class="n">${trend(r)}</td>` : ''}<td class="n"><span class="mini"><i style="width:${(r.pts30 / maxPts) * 100}%"></i></span>${fmt(r.pts30)}</td></tr>`
+        )
         .join('')}</tbody></table>`;
-    sum.textContent = t(
-      `${days.length} daily snapshots saved since ${shortDay(days[0])} · stored only in this browser`,
-      `${days.length} fotografie giornaliere salvate dal ${shortDay(days[0])} · salvate solo in questo browser`
-    );
+    sum.textContent =
+      days.length === 1
+        ? t(`1 daily snapshot saved on ${shortDay(days[0])} · stored only in this browser`, `1 fotografia giornaliera salvata il ${shortDay(days[0])} · salvata solo in questo browser`)
+        : t(
+            `${days.length} daily snapshots saved since ${shortDay(days[0])} · stored only in this browser`,
+            `${days.length} fotografie giornaliere salvate dal ${shortDay(days[0])} · salvate solo in questo browser`
+          );
     box.innerHTML = html;
     bindCharts(box);
   }
@@ -1508,15 +1604,24 @@
     const lp = localePrefix();
     const cell = (r, c) => {
       if (c.k === 'title')
-        return `<td><div style="display:flex;gap:8px;align-items:center"><img src="${esc(thumb(r.coverUrl, 100))}" loading="lazy" alt=""><a href="${lp}/models/${r.id}" target="_blank" rel="noopener">${esc(
+        return `<td><div style="display:flex;gap:10px;align-items:center"><img src="${esc(thumb(r.coverUrl, 100))}" loading="lazy" alt=""><div class="tt"><a href="${lp}/models/${r.id}" target="_blank" rel="noopener">${esc(
           r.titleTranslated || r.title
-        )}</a>${r.isExclusive ? ` <span class="tag">${t('Exclusive', 'Esclusivo')}</span>` : ''}</div></td>`;
+        )}</a>${r.isExclusive ? `<span class="tag">${t('Exclusive', 'Esclusivo')}</span>` : ''}</div></div></td>`;
       if (c.k === 'publishTime') return `<td class="n">${date(r.publishTime)}</td>`;
       if (c.k === 'perDay') return `<td class="n">${dec(r.perDay, 1)}</td>`;
       if (c.k === 'printRate') return `<td class="n">${pct(r.printCount, r.downloadCount)}</td>`;
       return `<td class="n">${fmt(r[c.k])}</td>`;
     };
-    const tot = (k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
+    // Ricerca per nome e filtro esclusivi; i totali seguono i modelli mostrati.
+    sum.insertAdjacentHTML(
+      'beforebegin',
+      `<div class="toolbar"><input type="search" data-f="q" placeholder="${t('Search by name…', 'Cerca per nome…')}">${
+        rows.some((r) => r.isExclusive) ? `<label><input type="checkbox" data-f="excl">${t('Exclusive only', 'Solo esclusivi')}</label>` : ''
+      }</div>`
+    );
+    const tb = modal.querySelector('.toolbar');
+    let shown = rows;
+    const tot = (k) => shown.reduce((s, r) => s + (r[k] || 0), 0);
 
     const draw = () => {
       rows.sort((a, b) => {
@@ -1525,11 +1630,18 @@
         if (typeof x === 'string') return dir * x.localeCompare(y);
         return dir * ((x || 0) - (y || 0));
       });
-      sum.innerHTML = `${t(`${rows.length} models · click a header to sort`, `${rows.length} modelli · clic sull'intestazione per ordinare`)} · <button class="btn sec" data-act="csv">${t('Export CSV', 'Esporta CSV')}</button>`;
-      sum.querySelector('[data-act=csv]').onclick = () => exportCsv(u, rows);
-      modal.querySelector('.mbody').innerHTML = `<table class="models">
-        <thead><tr>${cols.map((c) => `<th class="${c.n ? 'n' : ''}" data-k="${c.k}">${c.l}${sortK === c.k ? (dir < 0 ? ' ▾' : ' ▴') : ''}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map((r) => `<tr>${cols.map((c) => cell(r, c)).join('')}</tr>`).join('')}</tbody>
+      const q = tb.querySelector('[data-f=q]').value.trim().toLowerCase();
+      const excl = tb.querySelector('[data-f=excl]')?.checked;
+      shown = rows.filter((r) => (!excl || r.isExclusive) && (!q || `${r.titleTranslated || ''} ${r.title || ''}`.toLowerCase().includes(q)));
+      sum.innerHTML = `${
+        shown.length === rows.length
+          ? t(`${rows.length} models · click a header to sort`, `${rows.length} modelli · clic sull'intestazione per ordinare`)
+          : t(`${shown.length} of ${rows.length} models`, `${shown.length} di ${rows.length} modelli`)
+      }`;
+      // Colonna ordinata in evidenza.
+      modal.querySelector('.mbody').innerHTML = `<style>.models tbody td:nth-child(${cols.findIndex((c) => c.k === sortK) + 1}) { font-weight: 700; }</style><table class="models">
+        <thead><tr>${cols.map((c) => `<th class="${c.n ? 'n' : ''} ${sortK === c.k ? 'on' : ''}" data-k="${c.k}">${c.l}${sortK === c.k ? (dir < 0 ? ' ▾' : ' ▴') : ''}</th>`).join('')}</tr></thead>
+        <tbody>${shown.map((r) => `<tr>${cols.map((c) => cell(r, c)).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length}" class="muted">${t('No models match.', 'Nessun modello trovato.')}</td></tr>`}</tbody>
         <tfoot><tr>${cols.map((c) =>
           c.k === 'title' ? `<td>${t('Total', 'Totale')}</td>` : c.sum ? `<td class="n">${fmt(tot(c.k))}</td>` : c.k === 'printRate' ? `<td class="n">${pct(tot('printCount'), tot('downloadCount'))}</td>` : '<td></td>'
         ).join('')}</tr></tfoot></table>`;
@@ -1543,25 +1655,8 @@
           })
       );
     };
+    tb.addEventListener('input', draw);
     draw();
-  }
-
-  function exportCsv(u, rows) {
-    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const head = IT
-      ? ['id', 'titolo', 'url', 'pubblicato', 'download', 'stampe', 'mi_piace', 'collezioni', 'boost', 'commenti', 'dl_giorno', 'esclusivo', 'punti', 'punti_30gg']
-      : ['id', 'title', 'url', 'published', 'downloads', 'prints', 'likes', 'collections', 'boosts', 'comments', 'dl_per_day', 'exclusive', 'points', 'points_30d'];
-    const lines = rows.map((r) =>
-      [r.id, r.title, `https://makerworld.com/en/models/${r.id}`, r.publishTime?.slice(0, 10), r.downloadCount, r.printCount, r.likeCount, r.collectionCount, r.boostCnt, r.commentCount, r.perDay.toFixed(2), r.isExclusive ? 1 : 0, r.points ?? '', r.points30 ?? '']
-        .map(q)
-        .join(',')
-    );
-    const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `makerpulse-${u.handle}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
   // ---------- router: il sito è una SPA, quindi si osserva il cambio di URL ----------

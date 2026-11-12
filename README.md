@@ -43,7 +43,7 @@
 - **Trends** – daily snapshots of your models saved in your browser: downloads per day, points per day, which models are growing or slowing down.
 - **Forecasts & boosters** – the date you'll reach the next gift card or the cash minimum at your current pace, and who boosted you in the last 30 days.
 - **Model cards** – prints, boosts, print rate and hot score shown on every model card on home, search and profile pages.
-- **Models table** – every model of a creator in a sortable table with totals and CSV export (with points per model on your own profile).
+- **Models table** – every model of a creator in a sortable table with name search, an exclusive-only filter and totals (with points per model on your own profile).
 - **Quick replies** – your saved replies appear above any comment or reply box, in the language of the person you're replying to (Italian or English); hover to read the full text, click to insert. Edit them in the popup or save what you just typed with `+`.
 - **Movable panel** – drag the panel by its title bar and it stays where you leave it; collapsed, it shrinks to a small logo button.
 - Works with every MakerWorld language and with in-site navigation (no reload needed). English and Italian interface.
@@ -79,7 +79,7 @@ MakerPulse is an independent project and is not affiliated with Bambu Lab or Mak
 
 ## Italiano
 
-Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con export CSV e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
+Estensione per i creator di MakerWorld: statistiche dei modelli, punti e gift card, filtro di commenti e recensioni, tabella dei modelli con ricerca e totali e risposte rapide ai commenti. Interfaccia in italiano se il browser è in italiano.
 
 **Installazione:** dal [Chrome Web Store](https://chromewebstore.google.com/detail/moiomhlofgpbiifcjblcaefcebnccblp), da [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/aihonfmgicmamchimkdceleomgbbndec) o da [Firefox Add-ons](https://addons.mozilla.org/addon/makerpulse-makerworld/) (Firefox 140 o successivo): si aggiorna da sola.
 
